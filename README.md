@@ -1,42 +1,51 @@
-# NexST Template
+# Curio
 
-Продакшен-готовый монорепо-шаблон для полностековых проектов на **NestJS + Next.js**.
+Сервис персонального RSS-агрегатора с AI-фильтрацией новостей.
+
+Парсит RSS-ленты и Telegram-каналы, оценивает каждую статью с помощью LLM по заданным пользователем интересам и публикует персональный RSS-фид из релевантных материалов. Читать можно в любом RSS-ридере или через Telegram-бота.
+
+---
+
+## Как это работает
+
+1. **Сбор** — планировщик периодически обходит источники: RSS-ленты и Telegram-каналы
+2. **Фильтрация** — LLM оценивает каждую новость по заданным пользователем предпочтениям и интересам
+3. **Публикация** — отобранные материалы отдаются в виде стандартного RSS-фида, который можно подключить к любому читалке
 
 ---
 
 ## Возможности
 
-- **Монорепо** — pnpm workspaces + Turborepo с кэшированием сборок
-- **API** — NestJS 11 с Fastify-адаптером, SWC-компилятором и Swagger UI
-- **JWT-аутентификация** — login / refresh / logout с хранением хэша refresh-токена в БД
-- **Web** — Next.js 15 App Router с защищёнными маршрутами через next-auth v5
-- **UI** — shadcn/ui компоненты в `apps/web/src/components/ui` на Tailwind CSS v4
-- **Тёмная тема** — next-themes с переключателем в хедере, сохранение в localStorage, поддержка системных настроек
-- **Общие типы** — Zod-схемы в `@repo/types`, используемые и на API, и на фронте
-- **БД** — Prisma 6 + PostgreSQL, миграции и seed из коробки
-- **Строгий TypeScript** — strict mode везде, включая `noUncheckedIndexedAccess`
-- **Линтинг** — ESLint v9 flat config с раздельными правилами для NestJS и Next.js
-- **Docker** — multistage Dockerfile для API и Web, nginx-прокси, prod compose
-- **CI** — GitHub Actions: lint → typecheck → test → build
+- **Источники** — произвольные RSS/Atom-ленты + Telegram-каналы (через MTProto или публичный preview)
+- **AI-фильтрация** — интеграция с Groq API для оценки релевантности статей
+- **Настройка предпочтений** — описание интересов в свободной форме; LLM ориентируется на них при отборе
+- **Персональный RSS** — стандартный RSS 2.0-фид с отобранными новостями
+- **Монорепо** — pnpm workspaces + Turborepo
+- **API** — NestJS 11 + Fastify, Swagger UI
+- **Web** — Next.js 15 App Router, shadcn/ui, Tailwind CSS v4
+- **БД** — Prisma 6 + PostgreSQL (хранение источников, статей, оценок)
+- **Очереди** — Redis + Bull для фоновой обработки статей
+- **Docker** — полный compose для локальной разработки и продакшена
 
 ---
 
 ## Стек
 
-| Категория            | Технология                  | Версия    |
-| -------------------- | --------------------------- | --------- |
-| Пакетный менеджер    | pnpm                        | 9+        |
-| Оркестрация сборок   | Turborepo                   | latest    |
-| Backend              | NestJS                      | 11        |
-| HTTP-адаптер         | Fastify                     | —         |
-| Frontend             | Next.js                     | 15        |
-| Аутентификация (web) | next-auth                   | v5 (beta) |
-| ORM                  | Prisma                      | 6         |
-| База данных          | PostgreSQL                  | 16        |
-| UI-компоненты        | shadcn/ui + Tailwind CSS v4 | —         |
-| Валидация            | Zod + class-validator       | —         |
-| TypeScript           | —                           | 5.7       |
-| Node.js              | —                           | 22+       |
+| Категория          | Технология                  | Версия |
+| ------------------ | --------------------------- | ------ |
+| Пакетный менеджер  | pnpm                        | 9+     |
+| Оркестрация сборок | Turborepo                   | latest |
+| Backend            | NestJS                      | 11     |
+| HTTP-адаптер       | Fastify                     | —      |
+| Frontend           | Next.js                     | 15     |
+| ORM                | Prisma                      | 6      |
+| База данных        | PostgreSQL                  | 16     |
+| Очереди/кэш        | Redis + Bull                | —      |
+| UI-компоненты      | shadcn/ui + Tailwind CSS v4 | —      |
+| AI                 | Groq API                    | —      |
+| Валидация          | Zod + class-validator       | —      |
+| TypeScript         | —                           | 5.7    |
+| Node.js            | —                           | 22+    |
 
 ---
 
@@ -44,22 +53,22 @@
 
 ```bash
 # 1. Клонировать и перейти в директорию
-git clone <url> && cd nexst-template
+git clone <url> && cd personal-rss
 
 # 2. Установить зависимости
 pnpm install
 
 # 3. Настроить переменные окружения
 cp .env.example .env
-# Отредактировать .env: задать JWT_SECRET, NEXTAUTH_SECRET (min 32 символа)
+# Заполнить: DATABASE_URL, REDIS_URL, GROQ_API_KEY
 
-# 4. Запустить PostgreSQL
-docker compose up -d db
+# 4. Запустить PostgreSQL и Redis
+docker compose up -d
 
 # 5. Подготовить БД
-pnpm --filter @repo/api db:generate  # сгенерировать Prisma Client
-pnpm --filter @repo/api db:migrate   # применить миграции
-pnpm --filter @repo/api db:seed      # создать пользователя admin@example.com / admin123456
+pnpm --filter @repo/api db:generate
+pnpm --filter @repo/api db:migrate
+pnpm --filter @repo/api db:seed
 
 # 6. Запустить проект
 pnpm dev
@@ -67,14 +76,10 @@ pnpm dev
 
 После запуска:
 
-- Web: http://localhost:3000
+- Web (управление источниками и предпочтениями): http://localhost:3000
 - API: http://localhost:3001
 - Swagger: http://localhost:3001/api/docs
-
-> **Примечание.** `.env` хранится в корне монорепо и является единым источником переменных.
-> Все скрипты пакетов обращаются к нему явно — дублировать файл по пакетам не нужно.
-
-Подробнее: [docs/guides/getting-started.md](./docs/guides/getting-started.md)
+- Персональный RSS-фид: http://localhost:3001/feed.xml
 
 ---
 
@@ -82,19 +87,34 @@ pnpm dev
 
 ```
 apps/
-  api/          # NestJS (Fastify, SWC, JWT auth, Swagger, Prisma)
-  web/          # Next.js 15 (App Router, next-auth v5, shadcn/ui)
+  api/          # NestJS — парсинг, AI-фильтрация, генерация RSS-фида
+  web/          # Next.js 15 — управление источниками, предпочтениями, просмотр фида
 packages/
   types/        # Общие Zod-схемы и TypeScript-типы
   config/
-    eslint/     # ESLint flat config (base, nestjs, nextjs)
-    typescript/ # tsconfig базы (base, nestjs, nextjs)
+    eslint/     # ESLint flat config
+    typescript/ # tsconfig базы
     prettier/   # Prettier конфиг
 docker/
   api.Dockerfile
   web.Dockerfile
   nginx.conf
 ```
+
+---
+
+## Переменные окружения
+
+| Переменная            | Описание                               |
+| --------------------- | -------------------------------------- |
+| `DATABASE_URL`        | Строка подключения к PostgreSQL        |
+| `REDIS_URL`           | Строка подключения к Redis             |
+| `GROQ_API_KEY`        | API-ключ Groq                          |
+| `TELEGRAM_API_ID`     | Telegram App ID (для парсинга каналов) |
+| `TELEGRAM_API_HASH`   | Telegram App Hash                      |
+| `JWT_SECRET`          | Секрет для JWT-токенов                 |
+| `NEXTAUTH_SECRET`     | Секрет для next-auth                   |
+| `NEXT_PUBLIC_API_URL` | URL API для браузера                   |
 
 ---
 
@@ -106,16 +126,15 @@ pnpm build                                  # собрать все пакеты
 pnpm lint                                   # ESLint по всему монорепо
 pnpm typecheck                              # TypeScript проверка типов
 pnpm test                                   # запустить тесты
-pnpm format                                 # Prettier форматирование
 
 # База данных
 pnpm --filter @repo/api db:generate         # сгенерировать Prisma Client
 pnpm --filter @repo/api db:migrate          # создать/применить миграции
-pnpm --filter @repo/api db:seed             # заполнить тестовыми данными
+pnpm --filter @repo/api db:seed             # заполнить начальными данными
 pnpm --filter @repo/api db:studio           # открыть Prisma Studio
 
 # Docker
-docker compose up -d                        # запустить PostgreSQL локально
+docker compose up -d                        # запустить PostgreSQL и Redis локально
 docker compose down                         # остановить
 ```
 
@@ -123,15 +142,11 @@ docker compose down                         # остановить
 
 ## Документация
 
-| Документ                                                           | Описание                               |
-| ------------------------------------------------------------------ | -------------------------------------- |
-| [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md)                   | Правила ведения документации в проекте |
-| [docs/guides/getting-started.md](./docs/guides/getting-started.md) | Локальная установка шаг за шагом       |
-| [docs/guides/development.md](./docs/guides/development.md)         | Ежедневный workflow разработчика       |
-| [docs/guides/adding-a-module.md](./docs/guides/adding-a-module.md) | Добавление новой бизнес-сущности       |
-| [docs/guides/deployment.md](./docs/guides/deployment.md)           | Деплой в продакшен                     |
-| [docs/adr/](./docs/adr/)                                           | Архитектурные решения (ADR)            |
-| [CLAUDE.md](./CLAUDE.md)                                           | Инструкции для AI-ассистента           |
+| Документ                                                                                     | Описание                        |
+| -------------------------------------------------------------------------------------------- | ------------------------------- |
+| [docs/PRODUCT.md](./docs/PRODUCT.md)                                                         | Продуктовое описание сервиса    |
+| [docs/USER_STORIES.md](./docs/USER_STORIES.md)                                               | User stories                    |
+| [docs/adr/009-rss-aggregator-architecture.md](./docs/adr/009-rss-aggregator-architecture.md) | Архитектурное решение (ADR-009) |
 
 ---
 
