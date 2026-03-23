@@ -1,0 +1,139 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Придерживайся следующих правил:
+
+1. Описывай что ты делаешь
+2. Используй для ответов РУССКИЙ язык
+3. Делай все качественно архитектурно (и в соответствии с общепринятыми стандартами применяемых технологий)
+4. Комментарии к коду пиши на русском языке
+5. Когда предлагаешь внести какое-то изминение в код кратко пиши что делаешь и для чего
+
+## Project Overview
+
+This is a **monorepo template** for full-stack projects using NestJS (API) + Next.js (web) with shadcn/ui. It is a starter template — the goal is to scaffold a production-ready foundation, not a running application.
+
+## Monorepo Tooling
+
+- **Package manager**: pnpm with workspaces (`pnpm-workspace.yaml`)
+- **Build orchestration**: Turborepo (`turbo.json`)
+- **Node version**: defined in `.nvmrc` / `package.json#engines`
+
+## Common Commands
+
+```bash
+# Install all dependencies
+pnpm install
+
+# Start all apps in dev mode
+pnpm dev
+
+# Build all packages and apps
+pnpm build
+
+# Lint entire monorepo
+pnpm lint
+
+# Type-check entire monorepo
+pnpm typecheck
+
+# Run all tests
+pnpm test
+
+# Run tests for a single package (from root)
+pnpm --filter @repo/web test
+pnpm --filter @repo/api test
+
+# Database
+pnpm --filter @repo/api db:generate  # generate Prisma Client
+pnpm --filter @repo/api db:migrate   # apply migrations
+pnpm --filter @repo/api db:seed      # seed the database
+pnpm --filter @repo/api db:studio    # open Prisma Studio
+
+# Docker (local infrastructure: postgres, redis)
+docker compose up -d
+docker compose down
+```
+
+## Repository Structure
+
+Полная структура проекта описана в `README.md`. Краткий обзор:
+
+- `apps/api` — NestJS backend (Fastify, SWC, JWT auth, Swagger)
+- `apps/web` — Next.js 15 frontend (App Router, next-auth v5, shadcn/ui)
+- `packages/` — общие пакеты: `ui`, `types`, `config/{eslint,typescript,prettier}`
+- `docker/` — Dockerfile-ы и nginx.conf
+- `.github/workflows/ci.yml` — CI: lint → typecheck → test → build
+
+## Architecture Decisions
+
+### API (`apps/api`)
+
+- Uses **Fastify** adapter (not Express) for performance
+- Uses **SWC** compiler (not `tsc`) for faster builds
+- Global `ValidationPipe` with `class-validator` + `class-transformer`
+- Swagger docs at `/api/docs`
+- Health check at `/health`
+- Structured logging via `nestjs-pino`
+- Env validation via `zod` at startup
+- Module structure: `auth`, `users`, `prisma` (core modules pre-configured)
+
+### Web (`apps/web`)
+
+- Next.js 15 with **App Router** and `src/` directory
+- `@/*` path alias resolves to `src/`
+- Turbopack enabled in dev mode
+- Typesafe env via `@t3-oss/env-nextjs`
+- Server state: `@tanstack/react-query`
+- Client state: `zustand`
+- Forms: `react-hook-form` + `zod`
+- Auth: `next-auth` v5
+- UI components: shadcn/ui in `src/components/ui/`, utilities in `src/lib/utils.ts`
+
+### Shared Packages
+
+- `@repo/types` — Zod schemas and TypeScript interfaces shared between API and web; the source of truth for data shapes
+
+### TypeScript
+
+- `packages/config/typescript/base.json` is the root tsconfig; each app/package extends it
+- Strict mode enabled everywhere
+
+### ESLint
+
+- ESLint v9 flat config
+- Separate rule sets for NestJS (Node) and Next.js (browser/React) contexts
+- `eslint-plugin-import` enforces import order
+
+## Environment Variables
+
+See `.env.example` at the root. Each app reads its own subset:
+
+| Variable                          | Used by |
+| --------------------------------- | ------- |
+| `DATABASE_URL`                    | api     |
+| `REDIS_URL`                       | api     |
+| `JWT_SECRET`, `JWT_EXPIRES_IN`    | api     |
+| `NEXTAUTH_SECRET`, `NEXTAUTH_URL` | web     |
+| `NEXT_PUBLIC_API_URL`             | web     |
+
+## Документация
+
+Авторитетный источник правил ведения документации — [`docs/DOCUMENTATION.md`](./docs/DOCUMENTATION.md).
+
+Ключевые правила:
+
+- **Новое архитектурное решение** → создать ADR в `docs/adr/` по шаблону из `docs/adr/README.md` и добавить строку в индекс.
+- **Новый гайд или фича** → добавить/обновить соответствующий файл в `docs/guides/`.
+- **Список фич в README.md** должен отражать реальное состояние шаблона — обновлять при добавлении/удалении возможностей.
+- **Комментарии в коде** — только «почему», не «что». JSDoc только на публичном API пакетов.
+
+Расположение документации:
+
+```
+docs/
+  DOCUMENTATION.md   # мета-правила ведения доков
+  adr/               # Architecture Decision Records
+  guides/            # практические руководства
+```
