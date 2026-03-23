@@ -17,8 +17,10 @@ model User {
   email        String   @unique
   password     String
   role         Role     @default(USER)
-  refreshToken String?
-  createdAt    DateTime @default(now())
+  refreshToken        String?
+  resetToken          String?   @unique
+  resetTokenExpiresAt DateTime?
+  createdAt           DateTime  @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([role])

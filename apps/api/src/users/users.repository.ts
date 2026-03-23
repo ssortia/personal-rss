@@ -77,4 +77,18 @@ export class UsersRepository extends BaseRepository<
   async updateRefreshToken(id: string, hashedToken: string | null): Promise<void> {
     await this.prisma.user.update({ where: { id }, data: { refreshToken: hashedToken } });
   }
+
+  async setResetToken(id: string, hashedToken: string, expiresAt: Date): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { resetToken: hashedToken, resetTokenExpiresAt: expiresAt },
+    });
+  }
+
+  async clearResetToken(id: string, newHashedPassword: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: newHashedPassword, resetToken: null, resetTokenExpiresAt: null },
+    });
+  }
 }

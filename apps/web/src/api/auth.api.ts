@@ -1,4 +1,10 @@
-import type { LoginDto, RegisterDto, Tokens } from '@repo/types';
+import type {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+  Tokens,
+} from '@repo/types';
 
 import { api } from '../lib/api';
 
@@ -11,4 +17,8 @@ export const authApi = {
   refresh: (refreshToken: string) => api.post<Tokens>('/auth/refresh', { refreshToken }),
 
   logout: (accessToken: string) => api.post<void>('/auth/logout', {}, { accessToken }),
+
+  forgotPassword: (data: ForgotPasswordDto) => api.post<void>('/auth/forgot-password', data),
+
+  resetPassword: (data: ResetPasswordDto) => api.post<void>('/auth/reset-password', data),
 };

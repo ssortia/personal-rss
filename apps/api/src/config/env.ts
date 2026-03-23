@@ -9,6 +9,13 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   NEXTAUTH_URL: z.string().url().optional(),
+  // Email (SMTP)
+  SMTP_HOST: z.string(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string(),
+  SMTP_PASS: z.string(),
+  SMTP_FROM: z.string().default('Curio <noreply@curio.app>'),
+  APP_URL: z.string().url(),
 });
 
 type Env = z.infer<typeof envSchema>;

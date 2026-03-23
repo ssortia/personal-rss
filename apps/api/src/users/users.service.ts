@@ -37,4 +37,12 @@ export class UsersService {
   updateRefreshToken(userId: string, hashedToken: string | null): Promise<void> {
     return this.usersRepository.updateRefreshToken(userId, hashedToken);
   }
+
+  setResetToken(userId: string, hashedToken: string, expiresAt: Date): Promise<void> {
+    return this.usersRepository.setResetToken(userId, hashedToken, expiresAt);
+  }
+
+  clearResetToken(userId: string, newHashedPassword: string): Promise<void> {
+    return this.usersRepository.clearResetToken(userId, newHashedPassword);
+  }
 }

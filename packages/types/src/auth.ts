@@ -42,3 +42,17 @@ export const RefreshTokenDtoSchema = z.object({
 });
 
 export type RefreshTokenDto = z.infer<typeof RefreshTokenDtoSchema>;
+
+export const ForgotPasswordDtoSchema = z.object({
+  email: z.string().email(),
+});
+
+export type ForgotPasswordDto = z.infer<typeof ForgotPasswordDtoSchema>;
+
+export const ResetPasswordDtoSchema = z.object({
+  email: z.string().email(),
+  token: z.string(),
+  password: z.string().min(8),
+});
+
+export type ResetPasswordDto = z.infer<typeof ResetPasswordDtoSchema>;

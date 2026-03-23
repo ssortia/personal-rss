@@ -60,12 +60,19 @@ export function LoginForm() {
             Войти
           </Button>
         </ZodForm>
-        <p className="text-muted-foreground mt-4 text-center text-sm">
-          Нет аккаунта?{' '}
-          <Link href="/register" className="hover:text-foreground underline">
-            Зарегистрироваться
-          </Link>
-        </p>
+        <div className="text-muted-foreground mt-4 space-y-2 text-center text-sm">
+          <p>
+            <Link href="/forgot-password" className="hover:text-foreground underline">
+              Забыли пароль?
+            </Link>
+          </p>
+          <p>
+            Нет аккаунта?{' '}
+            <Link href="/register" className="hover:text-foreground underline">
+              Зарегистрироваться
+            </Link>
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

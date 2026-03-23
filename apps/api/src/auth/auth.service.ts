@@ -1,4 +1,7 @@
+import { randomBytes } from 'node:crypto';
+
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -9,6 +12,7 @@ import type { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 import { getEnv } from '../config/env';
+import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -16,6 +20,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
@@ -64,6 +69,35 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.usersService.updateRefreshToken(userId, null);
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    // Молча возвращаем — не раскрываем наличие аккаунта
+    if (!user) return;
+
+    const token = randomBytes(32).toString('hex');
+    const hashedToken = await bcrypt.hash(token, 10);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 час
+
+    await this.usersService.setResetToken(user.id, hashedToken, expiresAt);
+    await this.mailService.sendPasswordReset(email, token);
+  }
+
+  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user?.resetToken || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const tokenMatches = await bcrypt.compare(token, user.resetToken);
+    if (!tokenMatches) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersService.clearResetToken(user.id, hashedPassword);
   }
 
   private async generateTokens(userId: string, email: string, role: Role) {
