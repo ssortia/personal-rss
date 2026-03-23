@@ -183,14 +183,17 @@ GET /feed/:feedToken
 
 ## Ключевые зависимости
 
-| Пакет                     | Назначение        |
-| ------------------------- | ----------------- |
-| `@nestjs/bull` + `bullmq` | Очереди           |
-| `rss-parser`              | Парсинг RSS/Atom  |
-| `gramjs`                  | Telegram MTProto  |
-| `groq-sdk`                | Groq API          |
-| `fast-xml-parser`         | Генерация RSS XML |
-| `ioredis`                 | Redis клиент      |
+| Пакет                     | Назначение         |
+| ------------------------- | ------------------ |
+| `@nestjs/bull` + `bullmq` | Очереди            |
+| `rss-parser`              | Парсинг RSS/Atom   |
+| `gramjs`                  | Telegram MTProto   |
+| `groq-sdk`                | Groq API           |
+| `fast-xml-parser`         | Генерация RSS XML  |
+| `ioredis`                 | Redis клиент       |
+| `passport-google-oauth20` | OAuth через Google |
+| `passport-github2`        | OAuth через GitHub |
+| `passport-yandex`         | OAuth через Яндекс |
 
 ---
 
@@ -201,7 +204,13 @@ REDIS_URL
 GROQ_API_KEY
 TELEGRAM_API_ID
 TELEGRAM_API_HASH
-TELEGRAM_SESSION    # строка сессии gramjs (после первого входа)
+TELEGRAM_SESSION       # строка сессии gramjs (после первого входа)
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GITHUB_CLIENT_ID
+GITHUB_CLIENT_SECRET
+YANDEX_CLIENT_ID
+YANDEX_CLIENT_SECRET
 ```
 
 ---
