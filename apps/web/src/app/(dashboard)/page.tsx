@@ -100,7 +100,7 @@ export default async function DashboardPage() {
           </div>
           <h2 className="text-3xl font-bold tracking-tight">Добро пожаловать, {name} 👋</h2>
           <p className="text-muted-foreground">
-            Это стартовый шаблон NexST. Подключи данные и начни строить продукт.
+            Добро пожаловать в Curio — персональный RSS-агрегатор с AI-фильтрацией.
           </p>
         </div>
         <Button variant="outline" className="hidden gap-2 sm:flex">
