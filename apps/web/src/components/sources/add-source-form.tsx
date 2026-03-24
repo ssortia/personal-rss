@@ -2,12 +2,6 @@
 
 import { useState } from 'react';
 
-import { AddSourceDtoSchema, AddTelegramSourceDtoSchema } from '@repo/types';
-import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getAddSourceError, useAddSource, useAddTelegramSource } from '@/hooks/use-sources';
 import { ApiError } from '@/lib/api';
 
@@ -16,95 +10,120 @@ interface AddSourceFormProps {
   onCancel?: () => void;
 }
 
+type SourceType = 'rss' | 'telegram';
+
+/** Определяет тип источника по введённому значению. */
+function detectType(value: string): SourceType {
+  const v = value.trim().toLowerCase();
+  if (
+    v.startsWith('@') ||
+    v.startsWith('t.me/') ||
+    v.startsWith('https://t.me/') ||
+    v.startsWith('http://t.me/')
+  ) {
+    return 'telegram';
+  }
+  return 'rss';
+}
+
+const TYPE_LABELS: Record<SourceType, string> = {
+  rss: 'RSS / Atom',
+  telegram: 'Telegram',
+};
+
+const TYPE_COLORS: Record<SourceType, string> = {
+  rss: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  telegram: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+};
+
 export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
   const { mutateAsync: addRss, isPending: isRssPending } = useAddSource();
   const { mutateAsync: addTelegram, isPending: isTelegramPending } = useAddTelegramSource();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  async function onSubmitRss(data: { url: string }) {
-    setServerError(null);
+  const isPending = isRssPending || isTelegramPending;
+  const detectedType = detectType(value);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    setError(null);
     try {
-      await addRss(data);
+      if (detectedType === 'telegram') {
+        await addTelegram({ username: trimmed });
+      } else {
+        await addRss({ url: trimmed });
+      }
       onSuccess?.();
     } catch (err) {
-      setServerError(getAddSourceError(err));
-    }
-  }
-
-  async function onSubmitTelegram(data: { username: string }) {
-    setServerError(null);
-    try {
-      await addTelegram(data);
-      onSuccess?.();
-    } catch (err) {
-      setServerError(getTelegramError(err));
+      if (detectedType === 'telegram') {
+        setError(getTelegramError(err));
+      } else {
+        setError(getAddSourceError(err));
+      }
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Добавить источник</CardTitle>
-        <CardDescription>RSS-лента или публичный Telegram-канал</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="rss" onValueChange={() => setServerError(null)}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="rss">RSS / Atom</TabsTrigger>
-            <TabsTrigger value="telegram">Telegram</TabsTrigger>
-          </TabsList>
+    <div className="bg-card border-border rounded-xl border p-5">
+      <div className="mb-4">
+        <h2 className="font-medium">Добавить источник</h2>
+        <p className="text-muted-foreground mt-0.5 text-sm">
+          Вставьте ссылку на RSS-ленту или укажите Telegram-канал
+        </p>
+      </div>
 
-          <TabsContent value="rss">
-            <ZodForm schema={AddSourceDtoSchema} onSubmit={onSubmitRss} className="space-y-4">
-              <TextField
-                name="url"
-                label="URL ленты"
-                type="url"
-                placeholder="https://example.com/feed.xml"
-                required
-              />
-              {serverError && <p className="text-destructive text-sm">{serverError}</p>}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isRssPending}>
-                  {isRssPending ? 'Добавление...' : 'Добавить'}
-                </Button>
-                {onCancel && (
-                  <Button type="button" variant="outline" onClick={onCancel}>
-                    Отмена
-                  </Button>
-                )}
-              </div>
-            </ZodForm>
-          </TabsContent>
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-3">
+        <div className="flex items-center gap-2">
+          {/* Поле ввода с индикатором типа */}
+          <div className="border-border bg-background focus-within:ring-ring relative flex flex-1 items-center rounded-lg border focus-within:ring-2 focus-within:ring-offset-2">
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError(null);
+              }}
+              placeholder="https://example.com/feed.xml или @channel"
+              disabled={isPending}
+              className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-50"
+              autoFocus
+            />
+            {value.trim() && (
+              <span
+                className={`mr-2 shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${TYPE_COLORS[detectedType]}`}
+              >
+                {TYPE_LABELS[detectedType]}
+              </span>
+            )}
+          </div>
 
-          <TabsContent value="telegram">
-            <ZodForm
-              schema={AddTelegramSourceDtoSchema}
-              onSubmit={onSubmitTelegram}
-              className="space-y-4"
+          <button
+            type="submit"
+            disabled={isPending || !value.trim()}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {isPending ? 'Добавление...' : 'Добавить'}
+          </button>
+
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isPending}
+              className="text-muted-foreground hover:text-foreground shrink-0 text-sm transition-colors"
             >
-              <TextField
-                name="username"
-                label="Username канала"
-                placeholder="@channel или t.me/channel"
-                required
-              />
-              {serverError && <p className="text-destructive text-sm">{serverError}</p>}
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isTelegramPending}>
-                  {isTelegramPending ? 'Добавление...' : 'Добавить'}
-                </Button>
-                {onCancel && (
-                  <Button type="button" variant="outline" onClick={onCancel}>
-                    Отмена
-                  </Button>
-                )}
-              </div>
-            </ZodForm>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              Отмена
+            </button>
+          )}
+        </div>
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+      </form>
+    </div>
   );
 }
 

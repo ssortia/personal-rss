@@ -119,14 +119,21 @@ export function SourceCard({ userSource }: SourceCardProps) {
         </AlertDialog>
       </div>
 
-      {/* Иконка + название + URL */}
-      <div className="flex items-center gap-3 pr-6">
+      {/* Иконка + название + URL — весь блок кликабелен */}
+      <a
+        href={source.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 pr-6"
+      >
         <SourceFavicon url={source.url} type={source.type} imageUrl={source.imageUrl} size={32} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium leading-snug">{source.title}</p>
+          <p className="group-hover:text-primary truncate text-sm font-medium leading-snug transition-colors">
+            {source.title}
+          </p>
           <p className="text-muted-foreground truncate text-xs">{source.url}</p>
         </div>
-      </div>
+      </a>
 
       {/* Footer: тип + статус */}
       <div className="border-border flex items-center gap-2 border-t pt-2.5">
