@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Role, User } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { PublicUser } from './users.repository';
@@ -44,5 +45,27 @@ export class UsersService {
 
   clearResetToken(userId: string, newHashedPassword: string): Promise<void> {
     return this.usersRepository.clearResetToken(userId, newHashedPassword);
+  }
+
+  /** Возвращает текущий feedToken; генерирует новый, если ещё не создан. */
+  async getFeedToken(userId: string): Promise<string> {
+    const user = await this.usersRepository.findById(userId);
+    if (user?.feedToken) return user.feedToken;
+    return this.generateFeedToken(userId);
+  }
+
+  /** Сбрасывает feedToken и возвращает новый. */
+  resetFeedToken(userId: string): Promise<string> {
+    return this.generateFeedToken(userId);
+  }
+
+  private async generateFeedToken(userId: string): Promise<string> {
+    const token = randomBytes(32).toString('hex');
+    await this.usersRepository.setFeedToken(userId, token);
+    return token;
+  }
+
+  findByFeedToken(token: string): Promise<User | null> {
+    return this.usersRepository.findByFeedToken(token);
   }
 }

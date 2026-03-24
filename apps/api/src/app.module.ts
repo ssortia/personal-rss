@@ -3,6 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { ArticlesModule } from './articles/articles.module';
 import { AuthModule } from './auth/auth.module';
+import { FeedModule } from './feed/feed.module';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
 import { PreferencesModule } from './preferences/preferences.module';
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     ArticlesModule,
+    FeedModule,
     SourcesModule,
     PreferencesModule,
     HealthModule,

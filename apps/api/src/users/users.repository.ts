@@ -91,4 +91,12 @@ export class UsersRepository extends BaseRepository<
       data: { password: newHashedPassword, resetToken: null, resetTokenExpiresAt: null },
     });
   }
+
+  async setFeedToken(id: string, token: string): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { feedToken: token } });
+  }
+
+  findByFeedToken(token: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { feedToken: token } });
+  }
 }

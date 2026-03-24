@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+export const FeedTokenSchema = z.object({ token: z.string() });
+export type FeedToken = z.infer<typeof FeedTokenSchema>;
+
 export const ArticleFeedItemSchema = z.object({
   id: z.string(),
   title: z.string(),

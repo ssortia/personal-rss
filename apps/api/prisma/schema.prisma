@@ -18,6 +18,7 @@ model User {
   password            String
   role                Role      @default(USER)
   relevanceThreshold  Float     @default(0.6)
+  feedToken           String?   @unique
   refreshToken        String?
   resetToken          String?   @unique
   resetTokenExpiresAt DateTime?

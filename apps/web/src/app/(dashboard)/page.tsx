@@ -1,6 +1,7 @@
 'use client';
 
 import { ArticleCard } from '@/components/feed/article-card';
+import { FeedUrlWidget } from '@/components/feed/feed-url-widget';
 import { useFeed } from '@/hooks/use-feed';
 
 function FeedSkeleton() {
@@ -23,9 +24,12 @@ export default function FeedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Фид</h1>
-        <p className="text-muted-foreground text-sm">Отобранные статьи по вашим интересам</p>
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Фид</h1>
+          <p className="text-muted-foreground text-sm">Отобранные статьи по вашим интересам</p>
+        </div>
+        <FeedUrlWidget />
       </div>
 
       {isLoading ? (
