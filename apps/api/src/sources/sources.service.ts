@@ -2,19 +2,27 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import Parser from 'rss-parser';
 
 import { ArticlesRepository } from '../articles/articles.repository';
+import { PreferencesRepository } from '../preferences/preferences.repository';
+import { ScoringService } from '../scoring/scoring.service';
+
 import type { UserSourceWithSource } from './sources.repository';
 import { SourcesRepository } from './sources.repository';
 
 @Injectable()
 export class SourcesService {
+  private readonly logger = new Logger(SourcesService.name);
+
   constructor(
     private readonly sourcesRepository: SourcesRepository,
     private readonly articlesRepository: ArticlesRepository,
+    private readonly preferencesRepository: PreferencesRepository,
+    private readonly scoringService: ScoringService,
   ) {}
 
   /**
@@ -48,11 +56,11 @@ export class SourcesService {
 
     await this.sourcesRepository.createUserSource(userId, source.id);
 
-    // Запускаем первичный импорт статей асинхронно (fire-and-forget)
+    // Запускаем первичный импорт статей и AI-оценку асинхронно (fire-and-forget)
     void Promise.all([
       this.articlesRepository.upsertMany(source.id, feed.items),
       this.sourcesRepository.updateLastFetchAt(source.id),
-    ]);
+    ]).then(() => this.scoreArticlesForUser(userId, source.id));
 
     return this.sourcesRepository.findUserSources(userId);
   }
@@ -71,6 +79,33 @@ export class SourcesService {
       throw new NotFoundException('Источник не найден');
     }
     await this.sourcesRepository.toggleUserSource(userId, sourceId, isActive);
+  }
+
+  /**
+   * Оценивает статьи источника для пользователя батчами по 5.
+   * Запускается асинхронно — ошибки не прерывают основной флоу.
+   */
+  private async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
+    try {
+      const [articles, preferences] = await Promise.all([
+        this.articlesRepository.findBySource(sourceId),
+        this.preferencesRepository.findUserPreferences(userId),
+      ]);
+
+      const categoryNames = preferences.map((p) => p.category.name);
+
+      const BATCH = 5;
+      for (let i = 0; i < articles.length; i += BATCH) {
+        await Promise.all(
+          articles.slice(i, i + BATCH).map(async (article) => {
+            const { score, reason } = await this.scoringService.score(article, categoryNames);
+            await this.articlesRepository.upsertUserArticle(userId, article.id, score, reason);
+          }),
+        );
+      }
+    } catch (err) {
+      this.logger.error(`Ошибка AI-оценки статей для userId=${userId}: ${String(err)}`);
+    }
   }
 
   /**

@@ -1,23 +1,27 @@
 # Architecture Decision Records
 
-ADR (Architecture Decision Record) — короткий документ, фиксирующий архитектурное решение: что выбрали, почему, и какие у этого последствия.
+ADR (Architecture Decision Record) — короткий документ, фиксирующий архитектурное решение: что выбрали, почему, и какие
+у этого последствия.
 
-Подробнее о формате и правилах написания: [docs/DOCUMENTATION.md](../DOCUMENTATION.md#adr-architecture-decision-records).
+Подробнее о формате и правилах
+написания: [docs/DOCUMENTATION.md](../DOCUMENTATION.md#adr-architecture-decision-records).
 
 ---
 
 ## Индекс
 
-| №                                       | Решение                                              | Статус  | Дата       |
-| --------------------------------------- | ---------------------------------------------------- | ------- | ---------- |
-| [001](./001-monorepo-pnpm-turborepo.md) | Монорепо: pnpm workspaces + Turborepo                | Принято | 2026-02-28 |
-| [002](./002-nestjs-fastify-swc.md)      | NestJS: Fastify-адаптер + SWC-компилятор             | Принято | 2026-02-28 |
-| [003](./003-nextauth-v5-credentials.md) | Аутентификация на фронте: next-auth v5 + Credentials | Принято | 2026-02-28 |
-| [004](./004-tailwind-v4.md)             | CSS-фреймворк: Tailwind CSS v4                       | Принято | 2026-02-28 |
-| [005](./005-rbac-enum-roles.md)         | RBAC: ролевая модель на основе enum                  | Принято | 2026-03-03 |
-| [006](./006-dark-mode-next-themes.md)   | Тёмная тема: next-themes + class-based               | Принято | 2026-03-03 |
-| [007](./007-repository-layer.md)        | Слой репозиториев в API                              | Принято | 2026-03-04 |
-| [008](./008-frontend-api-client.md)     | Архитектура API-клиента на фронтенде                 | Принято | 2026-03-04 |
+| №                                           | Решение                                              | Статус  | Дата       |
+| ------------------------------------------- | ---------------------------------------------------- | ------- | ---------- |
+| [001](./001-monorepo-pnpm-turborepo.md)     | Монорепо: pnpm workspaces + Turborepo                | Принято | 2026-02-28 |
+| [002](./002-nestjs-fastify-swc.md)          | NestJS: Fastify-адаптер + SWC-компилятор             | Принято | 2026-02-28 |
+| [003](./003-nextauth-v5-credentials.md)     | Аутентификация на фронте: next-auth v5 + Credentials | Принято | 2026-02-28 |
+| [004](./004-tailwind-v4.md)                 | CSS-фреймворк: Tailwind CSS v4                       | Принято | 2026-02-28 |
+| [005](./005-rbac-enum-roles.md)             | RBAC: ролевая модель на основе enum                  | Принято | 2026-03-03 |
+| [006](./006-dark-mode-next-themes.md)       | Тёмная тема: next-themes + class-based               | Принято | 2026-03-03 |
+| [007](./007-repository-layer.md)            | Слой репозиториев в API                              | Принято | 2026-03-04 |
+| [008](./008-frontend-api-client.md)         | Архитектура API-клиента на фронтенде                 | Принято | 2026-03-04 |
+| [009](./009-rss-aggregator-architecture.md) | Архитектура RSS-агрегатора с AI-фильтрацией          | Принято | 2026-03-23 |
+| [010](./010-gate-pattern.md)                | Gate — слой интеграции с внешними API                | Принято | 2026-03-24 |
 
 ---
 

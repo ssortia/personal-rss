@@ -9,5 +9,6 @@ import { PreferencesService } from './preferences.service';
   imports: [PrismaModule],
   controllers: [PreferencesController],
   providers: [PreferencesService, PreferencesRepository],
+  exports: [PreferencesRepository],
 })
 export class PreferencesModule {}

@@ -16,6 +16,8 @@ const envSchema = z.object({
   SMTP_PASS: z.string(),
   SMTP_FROM: z.string().default('Curio <noreply@curio.app>'),
   APP_URL: z.string().url(),
+  // Groq API (AI-оценка статей)
+  GROQ_API_KEY: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;

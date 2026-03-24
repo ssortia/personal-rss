@@ -13,12 +13,15 @@ import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     LoggerModule.forRoot({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       pinoHttp: {
+        // Успешные запросы (2xx/3xx) не попадают в лог — только ошибки 4xx/5xx
+        customSuccessfulResponseLogLevel: 'silent',
         transport:
           process.env['NODE_ENV'] !== 'production'
             ? { target: 'pino-pretty', options: { colorize: true } }
             : undefined,
-      },
+      } as any,
     }),
     PrismaModule,
     MailModule,

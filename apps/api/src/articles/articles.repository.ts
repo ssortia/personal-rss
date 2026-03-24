@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Article } from '@prisma/client';
 import type { Item } from 'rss-parser';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -25,5 +26,28 @@ export class ArticlesRepository {
     if (data.length === 0) return;
 
     await this.prisma.article.createMany({ data, skipDuplicates: true });
+  }
+
+  /** Возвращает последние N статей источника (по умолчанию 50). */
+  findBySource(sourceId: string, limit = 50): Promise<Article[]> {
+    return this.prisma.article.findMany({
+      where: { sourceId },
+      orderBy: { publishedAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  /** Сохраняет или обновляет персональную оценку статьи для пользователя. */
+  async upsertUserArticle(
+    userId: string,
+    articleId: string,
+    score: number,
+    reason: string | null,
+  ): Promise<void> {
+    await this.prisma.userArticle.upsert({
+      where: { userId_articleId: { userId, articleId } },
+      create: { userId, articleId, score, scoreReason: reason },
+      update: { score, scoreReason: reason },
+    });
   }
 }

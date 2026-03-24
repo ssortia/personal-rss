@@ -32,3 +32,13 @@ export const UpdateThresholdDtoSchema = z.object({
   threshold: z.number().min(0).max(1),
 });
 export type UpdateThresholdDto = z.infer<typeof UpdateThresholdDtoSchema>;
+
+export const UserArticleSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  articleId: z.string(),
+  score: z.number().min(0).max(1),
+  scoreReason: z.string().nullable(),
+  createdAt: z.coerce.date(),
+});
+export type UserArticle = z.infer<typeof UserArticleSchema>;
