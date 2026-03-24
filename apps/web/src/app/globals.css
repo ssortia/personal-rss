@@ -97,9 +97,20 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    /* По умолчанию текст нельзя выделить и курсор не мигает */
+    user-select: none;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+  /* Только в полях ввода разрешаем выделение и текстовый курсор */
+  input, textarea, [contenteditable] {
+    user-select: text;
+    cursor: text;
+  }
+  /* Кликабельные элементы показывают pointer */
+  a, button, [role="button"], label[for], select {
+    cursor: pointer;
   }
 }
