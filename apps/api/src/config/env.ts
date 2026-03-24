@@ -18,6 +18,10 @@ const envSchema = z.object({
   APP_URL: z.string().url(),
   // Groq API (AI-оценка статей)
   GROQ_API_KEY: z.string().optional(),
+  // Количество статей в одном запросе к Groq
+  GROQ_BATCH_SIZE: z.coerce.number().int().positive().default(10),
+  // Задержка между батчами в мс (защита от превышения 30 RPM)
+  GROQ_BATCH_DELAY_MS: z.coerce.number().int().nonnegative().default(2000),
   // Интервал обхода источников в минутах
   FEED_SYNC_INTERVAL_MIN: z.coerce.number().int().positive().default(30),
 });

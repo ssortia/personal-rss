@@ -9,6 +9,7 @@ import { SourceType } from '@prisma/client';
 import Parser from 'rss-parser';
 
 import { ArticlesRepository } from '../articles/articles.repository';
+import { getEnv } from '../config/env';
 import { PreferencesRepository } from '../preferences/preferences.repository';
 import { ScoringService } from '../scoring/scoring.service';
 import { TelegramGate } from '../telegram/telegram.gate';
@@ -132,8 +133,9 @@ export class SourcesService {
   }
 
   /**
-   * Оценивает статьи источника для пользователя батчами по 5.
+   * Оценивает статьи источника для пользователя батчами через scoreBatch (1 запрос = N статей).
    * Обрабатывает только статьи без существующей оценки (UserArticle).
+   * Между батчами выдерживает задержку GROQ_BATCH_DELAY_MS для соблюдения 30 RPM лимита.
    * Запускается асинхронно — ошибки не прерывают основной флоу.
    */
   async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
@@ -143,18 +145,31 @@ export class SourcesService {
         this.preferencesRepository.getSettings(userId),
       ]);
 
-      const BATCH = 5;
-      for (let i = 0; i < articles.length; i += BATCH) {
-        await Promise.all(
-          articles.slice(i, i + BATCH).map(async (article) => {
-            const { score, reason } = await this.scoringService.score(
-              article,
-              settings.selectedCategories,
-              settings.interestsText,
-            );
-            await this.articlesRepository.upsertUserArticle(userId, article.id, score, reason);
-          }),
+      const { GROQ_BATCH_SIZE, GROQ_BATCH_DELAY_MS } = getEnv();
+
+      for (let i = 0; i < articles.length; i += GROQ_BATCH_SIZE) {
+        const batch = articles.slice(i, i + GROQ_BATCH_SIZE);
+        const results = await this.scoringService.scoreBatch(
+          batch,
+          settings.selectedCategories,
+          settings.interestsText,
         );
+
+        await Promise.all(
+          batch.map((article, j) =>
+            this.articlesRepository.upsertUserArticle(
+              userId,
+              article.id,
+              results[j]!.score,
+              results[j]!.reason,
+            ),
+          ),
+        );
+
+        // Задержка между батчами, кроме последнего
+        if (i + GROQ_BATCH_SIZE < articles.length) {
+          await new Promise((r) => setTimeout(r, GROQ_BATCH_DELAY_MS));
+        }
       }
     } catch (err) {
       this.logger.error(`Ошибка AI-оценки статей для userId=${userId}: ${String(err)}`);

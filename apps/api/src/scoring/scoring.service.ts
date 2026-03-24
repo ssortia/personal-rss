@@ -15,52 +15,95 @@ interface ScoreResult {
 /** Нейтральная оценка — используется когда Gate недоступен или вернул некорректный ответ. */
 const NEUTRAL: ScoreResult = { score: 0.5, reason: null };
 
+/** Приводит score к диапазону [0, 1]. */
+function clampScore(value: unknown): number {
+  return typeof value === 'number' ? Math.min(1, Math.max(0, value)) : 0.5;
+}
+
 @Injectable()
 export class ScoringService {
   private readonly logger = new Logger(ScoringService.name);
 
   constructor(private readonly groqGate: GroqGate) {}
 
-  /** Оценивает релевантность статьи для пользователя с заданными интересами. */
-  async score(
-    article: ArticleInput,
+  /**
+   * Оценивает батч статей за один запрос к Groq.
+   * Возвращает массив результатов в том же порядке, что и входные статьи.
+   * При ошибке парсинга отдельных элементов подставляет NEUTRAL.
+   */
+  async scoreBatch(
+    articles: ArticleInput[],
     categories: string[],
     interestsText?: string | null,
-  ): Promise<ScoreResult> {
+  ): Promise<ScoreResult[]> {
     if (!this.groqGate.isAvailable) {
-      return NEUTRAL;
+      return articles.map(() => NEUTRAL);
     }
 
-    const content = (article.content ?? '').slice(0, 1000);
     const categoryList = categories.length > 0 ? categories.join(', ') : 'не указаны';
     const interestsLine = interestsText ? `User interests (free text): ${interestsText}\n` : '';
 
-    const prompt = `You are a news relevance scorer. Given a user's interests and an article, return a JSON object with a relevance score from 0.0 to 1.0 and a short reason.
+    const articlesList = articles
+      .map((a, i) => {
+        const content = (a.content ?? '').slice(0, 500);
+        return `${i + 1}. Title: "${a.title}"\n   Content: "${content}"`;
+      })
+      .join('\n');
+
+    const prompt = `You are a news relevance scorer. Score these ${articles.length} articles for relevance to the user's interests.
+Return a JSON array with exactly ${articles.length} objects in the same order as the articles.
 
 ${interestsLine}User interests (categories): ${categoryList}
 
-Article title: ${article.title}
-Article content (excerpt): ${content}
+Articles:
+${articlesList}
 
-Respond ONLY with valid JSON in this exact format:
-{"score": 0.75, "reason": "Covers AI topic directly matching user interests"}
+Respond ONLY with a valid JSON array in this exact format:
+[{"score": 0.8, "reason": "..."}, {"score": 0.3, "reason": "..."}, ...]
 
-IMPORTANT: Write the "reason" field in the same language as the article content.`;
+Rules:
+- score is a float from 0.0 to 1.0
+- reason is a short explanation (1 sentence)
+- Write "reason" in the same language as the article content
+- Array must have exactly ${articles.length} elements`;
 
-    const text = await this.groqGate.chat([{ role: 'user', content: prompt }]);
+    // Увеличиваем лимит токенов пропорционально размеру батча
+    const maxTokens = 120 * articles.length;
+    const text = await this.groqGate.chat([{ role: 'user', content: prompt }], { maxTokens });
 
     if (!text) {
-      return NEUTRAL;
+      return articles.map(() => NEUTRAL);
     }
 
     try {
-      const parsed = JSON.parse(text) as { score?: unknown; reason?: unknown };
-      const score = typeof parsed.score === 'number' ? Math.min(1, Math.max(0, parsed.score)) : 0.5;
-      const reason = typeof parsed.reason === 'string' ? parsed.reason : null;
-      return { score, reason };
-    } catch {
-      this.logger.warn(`Не удалось распарсить ответ Groq для "${article.title}": ${text}`);
-      return NEUTRAL;
+      // Извлекаем первый JSON-массив из ответа (модель может добавить текст вокруг)
+      const match = /\[[\s\S]*\]/.exec(text);
+      if (!match) throw new Error('JSON-массив не найден в ответе');
+
+      const parsed = JSON.parse(match[0]) as unknown[];
+
+      if (!Array.isArray(parsed)) {
+        throw new Error('Ответ Groq не является JSON-массивом');
+      }
+
+      if (parsed.length !== articles.length) {
+        this.logger.warn(
+          `Groq вернул ${parsed.length} оценок вместо ${articles.length}, недостающие → NEUTRAL`,
+        );
+      }
+
+      return articles.map((_, i) => {
+        const item = parsed[i];
+        if (!item || typeof item !== 'object') return NEUTRAL;
+        const obj = item as Record<string, unknown>;
+        return {
+          score: clampScore(obj['score']),
+          reason: typeof obj['reason'] === 'string' ? obj['reason'] : null,
+        };
+      });
+    } catch (err) {
+      this.logger.warn(`Не удалось распарсить батч-ответ Groq: ${String(err)}\nОтвет: ${text}`);
+      return articles.map(() => NEUTRAL);
     }
   }
 }
