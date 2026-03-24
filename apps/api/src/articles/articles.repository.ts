@@ -109,8 +109,9 @@ export class ArticlesRepository {
         id: true,
         title: true,
         url: true,
+        content: true,
         publishedAt: true,
-        source: { select: { id: true, title: true } },
+        source: { select: { id: true, title: true, type: true } },
         userArticles: {
           where: { userId },
           select: { score: true },
@@ -128,9 +129,11 @@ export class ArticlesRepository {
       id: row.id,
       title: row.title,
       url: row.url,
+      content: row.content,
+      sourceType: row.source.type,
       publishedAt: row.publishedAt,
       score: row.userArticles[0]?.score ?? null,
-      source: row.source,
+      source: { id: row.source.id, title: row.source.title },
     }));
 
     const lastItem = items.at(-1);

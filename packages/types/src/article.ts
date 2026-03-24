@@ -7,6 +7,8 @@ export const ArticleFeedItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   url: z.string(),
+  content: z.string().nullable(),
+  sourceType: z.enum(['RSS', 'TELEGRAM']),
   publishedAt: z.coerce.date().nullable(),
   score: z.number().min(0).max(1).nullable(),
   source: z.object({ id: z.string(), title: z.string() }),
