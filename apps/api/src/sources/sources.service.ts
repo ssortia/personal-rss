@@ -13,6 +13,7 @@ import { PreferencesRepository } from '../preferences/preferences.repository';
 import { ScoringService } from '../scoring/scoring.service';
 import { TelegramGate } from '../telegram/telegram.gate';
 
+import { mapRssFeedItems } from './rss-mapper';
 import type { UserSourceWithSource } from './sources.repository';
 import { SourcesRepository } from './sources.repository';
 
@@ -59,15 +60,7 @@ export class SourcesService {
 
     await this.sourcesRepository.createUserSource(userId, source.id);
 
-    // Маппим элементы rss-parser в универсальный формат RawArticle
-    const articles = feed.items.map((item) => ({
-      guid: item.guid ?? item.link ?? item.title ?? '',
-      title: item.title ?? '',
-      url: item.link ?? '',
-      content:
-        item.contentSnippet ?? ((item as Record<string, unknown>)['content'] as string) ?? null,
-      publishedAt: item.pubDate ? new Date(item.pubDate) : null,
-    }));
+    const articles = mapRssFeedItems(feed.items);
 
     // Запускаем первичный импорт статей и AI-оценку асинхронно (fire-and-forget)
     void Promise.all([
@@ -140,12 +133,13 @@ export class SourcesService {
 
   /**
    * Оценивает статьи источника для пользователя батчами по 5.
+   * Обрабатывает только статьи без существующей оценки (UserArticle).
    * Запускается асинхронно — ошибки не прерывают основной флоу.
    */
-  private async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
+  async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
     try {
       const [articles, settings] = await Promise.all([
-        this.articlesRepository.findBySource(sourceId),
+        this.articlesRepository.findUnscoredBySource(userId, sourceId),
         this.preferencesRepository.getSettings(userId),
       ]);
 

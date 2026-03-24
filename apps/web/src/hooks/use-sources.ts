@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import type { AddSourceDto, AddTelegramSourceDto, ToggleSourceDto } from '@repo/types';
 
 import { sourcesApi } from '../api/sources.api';
+import { syncApi } from '../api/sync.api';
 import { ApiError } from '../lib/api';
 
 /** Хук для получения списка источников текущего пользователя. */
@@ -56,6 +57,14 @@ export function useDeleteSource() {
   return useMutation({
     mutationFn: (sourceId: string) => sourcesApi.delete(sourceId, session!.accessToken!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
+
+/** Хук для принудительного запуска обхода источников текущего пользователя. */
+export function useTriggerSync() {
+  const { data: session } = useSession();
+  return useMutation({
+    mutationFn: () => syncApi.trigger(session!.accessToken!),
   });
 }
 

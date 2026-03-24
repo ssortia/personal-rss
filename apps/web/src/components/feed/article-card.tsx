@@ -6,10 +6,12 @@ interface Props {
 
 function formatDate(date: Date | null): string {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('ru-RU', {
+  return new Date(date).toLocaleString('ru-RU', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 

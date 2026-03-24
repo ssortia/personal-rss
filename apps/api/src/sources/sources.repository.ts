@@ -58,6 +58,14 @@ export class SourcesRepository {
     });
   }
 
+  /** Активные источники пользователя (isActive=true) вместе с метаданными Source. */
+  findActiveUserSources(userId: string): Promise<UserSourceWithSource[]> {
+    return this.prisma.userSource.findMany({
+      where: { userId, isActive: true },
+      include: { source: true },
+    });
+  }
+
   toggleUserSource(userId: string, sourceId: string, isActive: boolean): Promise<UserSource> {
     return this.prisma.userSource.update({
       where: { userId_sourceId: { userId, sourceId } },
@@ -68,6 +76,31 @@ export class SourcesRepository {
   deleteUserSource(userId: string, sourceId: string): Promise<UserSource> {
     return this.prisma.userSource.delete({
       where: { userId_sourceId: { userId, sourceId } },
+    });
+  }
+
+  /** Источники, на которые подписан хотя бы один активный пользователь. */
+  findActiveSources(): Promise<Source[]> {
+    return this.prisma.source.findMany({
+      where: { userSources: { some: { isActive: true } } },
+    });
+  }
+
+  /** ID пользователей, у которых источник активен. */
+  findActiveUserIdsForSource(sourceId: string): Promise<string[]> {
+    return this.prisma.userSource
+      .findMany({
+        where: { sourceId, isActive: true },
+        select: { userId: true },
+      })
+      .then((rows) => rows.map((r) => r.userId));
+  }
+
+  /** Сохраняет сообщение об ошибке последней синхронизации источника. */
+  updateLastError(sourceId: string, error: string): Promise<Source> {
+    return this.prisma.source.update({
+      where: { id: sourceId },
+      data: { lastError: error },
     });
   }
 }

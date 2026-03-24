@@ -9,6 +9,7 @@ import { MailModule } from './mail/mail.module';
 import { PreferencesModule } from './preferences/preferences.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SourcesModule } from './sources/sources.module';
+import { SyncModule } from './sync/sync.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
     ArticlesModule,
     FeedModule,
     SourcesModule,
+    SyncModule,
     PreferencesModule,
     HealthModule,
   ],

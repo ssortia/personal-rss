@@ -49,6 +49,18 @@ export class ArticlesRepository {
     await this.prisma.article.createMany({ data, skipDuplicates: true });
   }
 
+  /** Статьи источника, ещё не оценённые для данного пользователя (нет записи UserArticle). */
+  findUnscoredBySource(userId: string, sourceId: string): Promise<Article[]> {
+    return this.prisma.article.findMany({
+      where: {
+        sourceId,
+        userArticles: { none: { userId } },
+      },
+      orderBy: { publishedAt: 'desc' },
+      take: 50,
+    });
+  }
+
   /** Возвращает последние N статей источника (по умолчанию 50). */
   findBySource(sourceId: string, limit = 50): Promise<Article[]> {
     return this.prisma.article.findMany({

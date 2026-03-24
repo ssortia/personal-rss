@@ -5,6 +5,7 @@ import { PreferencesModule } from '../preferences/preferences.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ScoringModule } from '../scoring/scoring.module';
 import { TelegramModule } from '../telegram/telegram.module';
+
 import { SourcesController } from './sources.controller';
 import { SourcesRepository } from './sources.repository';
 import { SourcesService } from './sources.service';
@@ -13,6 +14,6 @@ import { SourcesService } from './sources.service';
   imports: [PrismaModule, ArticlesModule, PreferencesModule, ScoringModule, TelegramModule],
   controllers: [SourcesController],
   providers: [SourcesService, SourcesRepository],
-  exports: [SourcesService],
+  exports: [SourcesService, SourcesRepository],
 })
 export class SourcesModule {}

@@ -18,6 +18,8 @@ const envSchema = z.object({
   APP_URL: z.string().url(),
   // Groq API (AI-оценка статей)
   GROQ_API_KEY: z.string().optional(),
+  // Интервал обхода источников в минутах
+  FEED_SYNC_INTERVAL_MIN: z.coerce.number().int().positive().default(30),
 });
 
 type Env = z.infer<typeof envSchema>;

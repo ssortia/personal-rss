@@ -5,11 +5,23 @@ import { useState } from 'react';
 import { AddSourceForm } from '@/components/sources/add-source-form';
 import { SourceCard } from '@/components/sources/source-card';
 import { Button } from '@/components/ui/button';
-import { useSources } from '@/hooks/use-sources';
+import { useSources, useTriggerSync } from '@/hooks/use-sources';
 
 export default function SourcesPage() {
   const { data: userSources, isLoading } = useSources();
   const [showForm, setShowForm] = useState(false);
+  const {
+    mutate: triggerSync,
+    isPending: isSyncing,
+    isSuccess: syncDone,
+    reset: resetSync,
+  } = useTriggerSync();
+
+  function handleTriggerSync() {
+    triggerSync(undefined, {
+      onSuccess: () => setTimeout(() => resetSync(), 3000),
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -18,7 +30,14 @@ export default function SourcesPage() {
           <h1 className="text-2xl font-semibold">Источники</h1>
           <p className="text-muted-foreground text-sm">Управление RSS и Atom лентами</p>
         </div>
-        {!showForm && <Button onClick={() => setShowForm(true)}>Добавить источник</Button>}
+        {!showForm && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleTriggerSync} disabled={isSyncing}>
+              {isSyncing ? 'Обновляется...' : syncDone ? 'Запущено' : 'Обновить статьи'}
+            </Button>
+            <Button onClick={() => setShowForm(true)}>Добавить источник</Button>
+          </div>
+        )}
       </div>
 
       {showForm && (
