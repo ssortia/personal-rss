@@ -22,3 +22,13 @@ export const UpdatePreferencesDtoSchema = z.object({
   categoryIds: z.array(z.string()),
 });
 export type UpdatePreferencesDto = z.infer<typeof UpdatePreferencesDtoSchema>;
+
+export const ThresholdSchema = z.object({
+  threshold: z.number().min(0).max(1),
+});
+export type Threshold = z.infer<typeof ThresholdSchema>;
+
+export const UpdateThresholdDtoSchema = z.object({
+  threshold: z.number().min(0).max(1),
+});
+export type UpdateThresholdDto = z.infer<typeof UpdateThresholdDtoSchema>;

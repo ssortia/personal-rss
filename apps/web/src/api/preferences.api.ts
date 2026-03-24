@@ -1,4 +1,10 @@
-import type { Category, UpdatePreferencesDto, UserPreferenceWithCategory } from '@repo/types';
+import type {
+  Category,
+  Threshold,
+  UpdatePreferencesDto,
+  UpdateThresholdDto,
+  UserPreferenceWithCategory,
+} from '@repo/types';
 
 import { api } from '../lib/api';
 
@@ -12,4 +18,10 @@ export const preferencesApi = {
 
   updatePreferences: (data: UpdatePreferencesDto, accessToken: string) =>
     api.put<UserPreferenceWithCategory[]>('/preferences', data, { accessToken }),
+
+  getThreshold: (accessToken: string) =>
+    api.get<Threshold>('/preferences/threshold', { accessToken }),
+
+  updateThreshold: (data: UpdateThresholdDto, accessToken: string) =>
+    api.patch<Threshold>('/preferences/threshold', data, { accessToken }),
 };

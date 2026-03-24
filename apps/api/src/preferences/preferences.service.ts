@@ -19,4 +19,12 @@ export class PreferencesService {
   updatePreferences(userId: string, categoryIds: string[]): Promise<UserPreferenceWithCategory[]> {
     return this.preferencesRepository.replaceUserPreferences(userId, categoryIds);
   }
+
+  getThreshold(userId: string): Promise<{ threshold: number }> {
+    return this.preferencesRepository.getUserThreshold(userId);
+  }
+
+  updateThreshold(userId: string, threshold: number): Promise<{ threshold: number }> {
+    return this.preferencesRepository.updateUserThreshold(userId, threshold);
+  }
 }

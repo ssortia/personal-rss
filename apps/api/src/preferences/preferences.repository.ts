@@ -21,6 +21,23 @@ export class PreferencesRepository {
     });
   }
 
+  async getUserThreshold(userId: string): Promise<{ threshold: number }> {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { relevanceThreshold: true },
+    });
+    return { threshold: user.relevanceThreshold };
+  }
+
+  async updateUserThreshold(userId: string, threshold: number): Promise<{ threshold: number }> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { relevanceThreshold: threshold },
+      select: { relevanceThreshold: true },
+    });
+    return { threshold: user.relevanceThreshold };
+  }
+
   /** Заменяет все предпочтения пользователя в одной транзакции. */
   async replaceUserPreferences(
     userId: string,
