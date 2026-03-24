@@ -55,7 +55,8 @@ export class TelegramGate {
 
     const posts: TelegramPost[] = [];
 
-    $('.tgme_widget_message_wrap[data-post]').each((_, el) => {
+    // data-post находится на .tgme_widget_message, а не на .tgme_widget_message_wrap
+    $('.tgme_widget_message[data-post]').each((_, el) => {
       const dataPost = $(el).attr('data-post');
       if (!dataPost) return;
 

@@ -106,10 +106,18 @@ export class SourcesService {
 
     await this.sourcesRepository.createUserSource(userId, source.id);
 
+    this.logger.log(
+      `Telegram @${username}: найдено ${channel.posts.length} постов, запуск импорта`,
+    );
+
     void Promise.all([
       this.articlesRepository.upsertMany(source.id, channel.posts),
       this.sourcesRepository.updateLastFetchAt(source.id),
-    ]).then(() => this.scoreArticlesForUser(userId, source.id));
+    ])
+      .then(() => this.scoreArticlesForUser(userId, source.id))
+      .catch((err: unknown) =>
+        this.logger.error(`Ошибка импорта постов Telegram @${username}: ${String(err)}`),
+      );
 
     return this.sourcesRepository.findUserSources(userId);
   }

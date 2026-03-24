@@ -38,7 +38,9 @@ Article title: ${article.title}
 Article content (excerpt): ${content}
 
 Respond ONLY with valid JSON in this exact format:
-{"score": 0.75, "reason": "Covers AI topic directly matching user interests"}`;
+{"score": 0.75, "reason": "Covers AI topic directly matching user interests"}
+
+IMPORTANT: Write the "reason" field in the same language as the article content.`;
 
     const text = await this.groqGate.chat([{ role: 'user', content: prompt }]);
 
