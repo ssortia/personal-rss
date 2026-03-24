@@ -67,7 +67,7 @@ export class SourcesService {
     void Promise.all([
       this.articlesRepository.upsertMany(source.id, articles),
       this.sourcesRepository.updateLastFetchAt(source.id),
-    ]).then(() => this.scoreArticlesForUser(userId, source.id));
+    ]).then(() => this.scoreArticlesForUser(userId, source.id, SourceType.RSS));
 
     return this.sourcesRepository.findUserSources(userId);
   }
@@ -108,7 +108,7 @@ export class SourcesService {
       this.articlesRepository.upsertMany(source.id, channel.posts),
       this.sourcesRepository.updateLastFetchAt(source.id),
     ])
-      .then(() => this.scoreArticlesForUser(userId, source.id))
+      .then(() => this.scoreArticlesForUser(userId, source.id, SourceType.TELEGRAM))
       .catch((err: unknown) =>
         this.logger.error(`Ошибка импорта постов Telegram @${username}: ${String(err)}`),
       );
@@ -138,7 +138,11 @@ export class SourcesService {
    * Между батчами выдерживает задержку GROQ_BATCH_DELAY_MS для соблюдения 30 RPM лимита.
    * Запускается асинхронно — ошибки не прерывают основной флоу.
    */
-  async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
+  async scoreArticlesForUser(
+    userId: string,
+    sourceId: string,
+    sourceType: SourceType,
+  ): Promise<void> {
     try {
       const [articles, settings] = await Promise.all([
         this.articlesRepository.findUnscoredBySource(userId, sourceId),
@@ -150,20 +154,29 @@ export class SourcesService {
       for (let i = 0; i < articles.length; i += GROQ_BATCH_SIZE) {
         const batch = articles.slice(i, i + GROQ_BATCH_SIZE);
         const results = await this.scoringService.scoreBatch(
-          batch,
+          batch.map((a) => ({ ...a, sourceType })),
           settings.selectedCategories,
           settings.interestsText,
         );
 
         await Promise.all(
-          batch.map((article, j) =>
-            this.articlesRepository.upsertUserArticle(
+          batch.map(async (article, j) => {
+            const result = results[j]!;
+            await this.articlesRepository.upsertUserArticle(
               userId,
               article.id,
-              results[j]!.score,
-              results[j]!.reason,
-            ),
-          ),
+              result.score,
+              result.reason,
+            );
+            // Сохраняем AI-контент в Article (один раз для всех пользователей)
+            if (result.aiContent) {
+              await this.articlesRepository.updateAiContent(
+                article.id,
+                sourceType,
+                result.aiContent,
+              );
+            }
+          }),
         );
 
         // Задержка между батчами, кроме последнего

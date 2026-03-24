@@ -118,6 +118,10 @@ model Article {
   title       String
   url         String
   content     String?
+  /// AI-саммари для RSS-статей (1–2 предл.)
+  summary     String?
+  /// AI-заголовок для Telegram-постов (генерируется один раз, не перезаписывает оригинальный title)
+  aiTitle     String?
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
 

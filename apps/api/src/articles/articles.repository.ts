@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Article } from '@prisma/client';
+import { SourceType } from '@prisma/client';
 
 import type { ArticleFeedItem, FeedPage } from '@repo/types';
 
@@ -110,6 +111,8 @@ export class ArticlesRepository {
         title: true,
         url: true,
         content: true,
+        summary: true,
+        aiTitle: true,
         publishedAt: true,
         source: { select: { id: true, title: true, type: true } },
         userArticles: {
@@ -130,6 +133,8 @@ export class ArticlesRepository {
       title: row.title,
       url: row.url,
       content: row.content,
+      summary: row.summary,
+      aiTitle: row.aiTitle,
       sourceType: row.source.type,
       publishedAt: row.publishedAt,
       score: row.userArticles[0]?.score ?? null,
@@ -146,6 +151,29 @@ export class ArticlesRepository {
         : null;
 
     return { items: feedItems, nextCursor };
+  }
+
+  /**
+   * Сохраняет AI-контент статьи один раз (идемпотентно — пропускает если поле уже заполнено):
+   * - TELEGRAM → aiTitle (отдельное поле, оригинальный title не трогается)
+   * - RSS/ATOM  → summary
+   */
+  async updateAiContent(
+    articleId: string,
+    sourceType: SourceType,
+    aiContent: string,
+  ): Promise<void> {
+    if (sourceType === SourceType.TELEGRAM) {
+      await this.prisma.article.updateMany({
+        where: { id: articleId, aiTitle: null },
+        data: { aiTitle: aiContent },
+      });
+    } else {
+      await this.prisma.article.updateMany({
+        where: { id: articleId, summary: null },
+        data: { summary: aiContent },
+      });
+    }
   }
 
   /** Сохраняет или обновляет персональную оценку статьи для пользователя. */

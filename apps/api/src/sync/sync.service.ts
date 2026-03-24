@@ -61,7 +61,7 @@ export class SyncService implements OnModuleInit {
         limit(async () => {
           try {
             await this.fetchAndSaveArticles(source);
-            await this.sourcesService.scoreArticlesForUser(userId, source.id);
+            await this.sourcesService.scoreArticlesForUser(userId, source.id, source.type);
           } catch (err) {
             await this.sourcesRepository.updateLastError(source.id, (err as Error).message);
             this.logger.warn(`[${source.url}] ошибка при синхронизации: ${String(err)}`);
@@ -112,7 +112,7 @@ export class SyncService implements OnModuleInit {
         userIds.map((uid) =>
           userLimit(() =>
             this.sourcesService
-              .scoreArticlesForUser(uid, source.id)
+              .scoreArticlesForUser(uid, source.id, source.type)
               .catch((err: unknown) =>
                 this.logger.warn(`Оценка uid=${uid} source=${source.id}: ${String(err)}`),
               ),

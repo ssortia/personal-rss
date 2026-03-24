@@ -14,6 +14,10 @@ export class SourcesRepository {
     return this.prisma.source.findUnique({ where: { url } });
   }
 
+  findById(id: string): Promise<Source | null> {
+    return this.prisma.source.findUnique({ where: { id } });
+  }
+
   /** Создаёт источник или обновляет метаданные, если он уже существует. */
   upsertSource(data: {
     url: string;

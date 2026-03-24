@@ -5,15 +5,18 @@ import { GroqGate } from './groq.gate';
 interface ArticleInput {
   title: string;
   content: string | null;
+  sourceType: 'RSS' | 'ATOM' | 'TELEGRAM';
 }
 
 interface ScoreResult {
   score: number;
   reason: string | null;
+  /** Для RSS: краткое содержание (1–2 предл.). Для Telegram: AI-заголовок (1 строка). */
+  aiContent: string | null;
 }
 
 /** Нейтральная оценка — используется когда Gate недоступен или вернул некорректный ответ. */
-const NEUTRAL: ScoreResult = { score: 0.5, reason: null };
+const NEUTRAL: ScoreResult = { score: 0.5, reason: null, aiContent: null };
 
 /** Приводит score к диапазону [0, 1]. */
 function clampScore(value: unknown): number {
@@ -46,7 +49,8 @@ export class ScoringService {
     const articlesList = articles
       .map((a, i) => {
         const content = (a.content ?? '').slice(0, 500);
-        return `${i + 1}. Title: "${a.title}"\n   Content: "${content}"`;
+        const type = a.sourceType === 'TELEGRAM' ? 'TELEGRAM' : 'RSS';
+        return `${i + 1}. [${type}] Title: "${a.title}"\n   Content: "${content}"`;
       })
       .join('\n');
 
@@ -59,16 +63,19 @@ Articles:
 ${articlesList}
 
 Respond ONLY with a valid JSON array in this exact format:
-[{"score": 0.8, "reason": "..."}, {"score": 0.3, "reason": "..."}, ...]
+[{"score": 0.8, "reason": "...", "aiContent": "..."}, ...]
 
 Rules:
 - score is a float from 0.0 to 1.0
 - reason is a short explanation (1 sentence)
-- Write "reason" in the same language as the article content
+- aiContent rules depend on article type:
+  - [TELEGRAM]: generate a short title (5-8 words) summarising the post
+  - [RSS]: generate a 1-2 sentence summary of the article
+- Write "reason" and "aiContent" in the same language as the article content
 - Array must have exactly ${articles.length} elements`;
 
     // Увеличиваем лимит токенов пропорционально размеру батча
-    const maxTokens = 120 * articles.length;
+    const maxTokens = 150 * articles.length;
     const text = await this.groqGate.chat([{ role: 'user', content: prompt }], { maxTokens });
 
     if (!text) {
@@ -99,6 +106,7 @@ Rules:
         return {
           score: clampScore(obj['score']),
           reason: typeof obj['reason'] === 'string' ? obj['reason'] : null,
+          aiContent: typeof obj['aiContent'] === 'string' ? obj['aiContent'] : null,
         };
       });
     } catch (err) {

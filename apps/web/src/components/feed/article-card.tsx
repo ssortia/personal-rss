@@ -53,17 +53,26 @@ export function ArticleCard({ article }: Props) {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-1">
           {isTelegram ? (
-            // Для Telegram: title — это обрезанный контент, показываем только полный текст
-            article.content && <TelegramContent content={article.content} url={article.url} />
+            <div className="space-y-1.5">
+              {/* AI-заголовок поста: показываем только после генерации, оригинальный title не используем */}
+              {article.aiTitle && <p className="font-medium leading-snug">{article.aiTitle}</p>}
+              {article.content && <TelegramContent content={article.content} url={article.url} />}
+            </div>
           ) : (
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group-hover:text-primary line-clamp-2 block font-medium leading-snug transition-colors"
-            >
-              {article.title}
-            </a>
+            <div className="space-y-1">
+              <a
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group-hover:text-primary line-clamp-2 block font-medium leading-snug transition-colors"
+              >
+                {article.title}
+              </a>
+              {/* AI-саммари: показываем только после генерации */}
+              {article.summary && (
+                <p className="text-muted-foreground line-clamp-2 text-sm">{article.summary}</p>
+              )}
+            </div>
           )}
 
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
