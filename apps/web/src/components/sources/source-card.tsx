@@ -1,5 +1,5 @@
 import type { UserSourceWithSource } from '@repo/types';
-import { Trash2 } from 'lucide-react';
+import { AlertCircle, Clock, Trash2 } from 'lucide-react';
 
 import {
   AlertDialog,
@@ -13,7 +13,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useDeleteSource, useToggleSource } from '@/hooks/use-sources';
 
@@ -21,10 +28,25 @@ interface SourceCardProps {
   userSource: UserSourceWithSource;
 }
 
+/** Форматирует дату в читаемый относительный вид. */
+function formatSyncTime(date: Date | string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days = Math.floor(diff / 86_400_000);
+
+  if (minutes < 1) return 'только что';
+  if (minutes < 60) return `${minutes} мин. назад`;
+  if (hours < 24) return `${hours} ч. назад`;
+  return `${days} дн. назад`;
+}
+
 export function SourceCard({ userSource }: SourceCardProps) {
   const { source } = userSource;
   const { mutate: deleteSource, isPending: isDeleting } = useDeleteSource();
   const { mutate: toggleSource, isPending: isToggling } = useToggleSource();
+
+  const hasError = !!source.lastError;
 
   return (
     <Card className={userSource.isActive ? undefined : 'opacity-60'}>
@@ -45,7 +67,13 @@ export function SourceCard({ userSource }: SourceCardProps) {
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <CardTitle className="truncate text-base">{source.title}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="truncate text-base">{source.title}</CardTitle>
+            {/* Бейдж типа источника */}
+            <span className="text-muted-foreground bg-muted shrink-0 rounded px-1.5 py-0.5 text-xs font-medium">
+              {source.type}
+            </span>
+          </div>
           <CardDescription className="truncate text-xs">{source.url}</CardDescription>
         </div>
 
@@ -90,11 +118,34 @@ export function SourceCard({ userSource }: SourceCardProps) {
           </AlertDialogContent>
         </AlertDialog>
       </CardHeader>
+
       {source.description && (
-        <CardContent>
+        <CardContent className="pb-0">
           <p className="text-muted-foreground line-clamp-2 text-sm">{source.description}</p>
         </CardContent>
       )}
+
+      {/* Футер: ошибка или время последней синхронизации */}
+      <CardFooter className="pt-3">
+        {hasError ? (
+          <div className="text-destructive flex items-center gap-1.5 text-xs">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate" title={source.lastError ?? undefined}>
+              Ошибка синхронизации
+            </span>
+          </div>
+        ) : source.lastFetchAt ? (
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>Синхронизировано {formatSyncTime(source.lastFetchAt)}</span>
+          </div>
+        ) : (
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>Синхронизация не выполнялась</span>
+          </div>
+        )}
+      </CardFooter>
     </Card>
   );
 }

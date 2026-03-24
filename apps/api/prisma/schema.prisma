@@ -44,6 +44,7 @@ model Source {
   imageUrl    String?
   type        SourceType @default(RSS)
   lastFetchAt DateTime?
+  lastError   String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

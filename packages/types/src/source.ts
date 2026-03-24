@@ -11,6 +11,7 @@ export const SourceSchema = z.object({
   imageUrl: z.string().nullable(),
   type: SourceTypeSchema,
   lastFetchAt: z.coerce.date().nullable(),
+  lastError: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
