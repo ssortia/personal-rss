@@ -5,6 +5,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
+import { PreferencesModule } from './preferences/preferences.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SourcesModule } from './sources/sources.module';
 import { UsersModule } from './users/users.module';
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ArticlesModule,
     SourcesModule,
+    PreferencesModule,
     HealthModule,
   ],
 })

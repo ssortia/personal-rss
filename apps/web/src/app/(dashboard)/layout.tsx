@@ -30,6 +30,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
               >
                 Источники
               </Link>
+              <Link
+                href="/preferences"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                Интересы
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin/users"

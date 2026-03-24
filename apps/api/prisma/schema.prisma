@@ -23,7 +23,8 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  userSources UserSource[]
+  userSources     UserSource[]
+  userPreferences UserPreference[]
 
   @@index([role])
   @@index([createdAt])
@@ -66,6 +67,32 @@ model UserSource {
   @@unique([userId, sourceId])
   @@index([userId])
   @@map("user_sources")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userPreferences UserPreference[]
+
+  @@map("categories")
+}
+
+model UserPreference {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+  @@map("user_preferences")
 }
 
 model Article {
