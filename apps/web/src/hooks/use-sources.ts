@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
-import type { AddSourceDto, ToggleSourceDto } from '@repo/types';
+import type { AddSourceDto, AddTelegramSourceDto, ToggleSourceDto } from '@repo/types';
 
 import { sourcesApi } from '../api/sources.api';
 import { ApiError } from '../lib/api';
@@ -24,6 +24,16 @@ export function useAddSource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AddSourceDto) => sourcesApi.add(data, session!.accessToken!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
+
+/** Хук для добавления публичного Telegram-канала с автоматической инвалидацией кэша. */
+export function useAddTelegramSource() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AddTelegramSourceDto) => sourcesApi.addTelegram(data, session!.accessToken!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
   });
 }

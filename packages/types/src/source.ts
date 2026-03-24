@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SourceTypeSchema = z.enum(['RSS', 'ATOM']);
+export const SourceTypeSchema = z.enum(['RSS', 'ATOM', 'TELEGRAM']);
 export type SourceType = z.infer<typeof SourceTypeSchema>;
 
 export const SourceSchema = z.object({
@@ -36,3 +36,8 @@ export const ToggleSourceDtoSchema = z.object({
   isActive: z.boolean(),
 });
 export type ToggleSourceDto = z.infer<typeof ToggleSourceDtoSchema>;
+
+export const AddTelegramSourceDtoSchema = z.object({
+  username: z.string().min(1, 'Введите username канала'),
+});
+export type AddTelegramSourceDto = z.infer<typeof AddTelegramSourceDtoSchema>;

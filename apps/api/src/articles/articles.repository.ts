@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import type { Article } from '@prisma/client';
-import type { Item } from 'rss-parser';
 
 import type { ArticleFeedItem, FeedPage } from '@repo/types';
+
+/** Универсальный формат статьи для импорта из любого источника (RSS, Telegram и др.). */
+export interface RawArticle {
+  guid: string;
+  title: string;
+  url: string;
+  content?: string | null;
+  publishedAt?: Date | null;
+}
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -23,20 +31,18 @@ function decodeCursor(raw: string): FeedCursor {
 export class ArticlesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Сохраняет статьи из RSS-фида, пропуская уже существующие (по sourceId + guid). */
-  async upsertMany(sourceId: string, items: Item[]): Promise<void> {
-    const data = items
-      .filter((item) => item.title) // пропускаем элементы без заголовка
-      .map((item) => ({
+  /** Сохраняет статьи из любого источника, пропуская уже существующие (по sourceId + guid). */
+  async upsertMany(sourceId: string, articles: RawArticle[]): Promise<void> {
+    const data = articles
+      .filter((a) => a.title && a.guid) // пропускаем статьи без заголовка или идентификатора
+      .map((a) => ({
         sourceId,
-        guid: item.guid ?? item.link ?? item.title ?? '',
-        title: item.title ?? '',
-        url: item.link ?? '',
-        content:
-          item.contentSnippet ?? ((item as Record<string, unknown>)['content'] as string) ?? null,
-        publishedAt: item.pubDate ? new Date(item.pubDate) : null,
-      }))
-      .filter((a) => a.guid); // исключаем статьи без идентификатора
+        guid: a.guid,
+        title: a.title,
+        url: a.url,
+        content: a.content ?? null,
+        publishedAt: a.publishedAt ?? null,
+      }));
 
     if (data.length === 0) return;
 

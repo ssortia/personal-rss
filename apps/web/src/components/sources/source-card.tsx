@@ -71,7 +71,7 @@ export function SourceCard({ userSource }: SourceCardProps) {
             <CardTitle className="truncate text-base">{source.title}</CardTitle>
             {/* Бейдж типа источника */}
             <span className="text-muted-foreground bg-muted shrink-0 rounded px-1.5 py-0.5 text-xs font-medium">
-              {source.type}
+              {source.type === 'TELEGRAM' ? 'TG' : source.type}
             </span>
           </div>
           <CardDescription className="truncate text-xs">{source.url}</CardDescription>

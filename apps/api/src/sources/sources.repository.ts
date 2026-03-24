@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Source, UserSource } from '@prisma/client';
+import { SourceType } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -19,6 +20,7 @@ export class SourcesRepository {
     title: string;
     description: string | null;
     imageUrl: string | null;
+    type?: SourceType;
   }): Promise<Source> {
     return this.prisma.source.upsert({
       where: { url: data.url },

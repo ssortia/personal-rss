@@ -37,6 +37,7 @@ model User {
 enum SourceType {
   RSS
   ATOM
+  TELEGRAM
 }
 
 model Source {

@@ -1,4 +1,9 @@
-import type { AddSourceDto, ToggleSourceDto, UserSourceWithSource } from '@repo/types';
+import type {
+  AddSourceDto,
+  AddTelegramSourceDto,
+  ToggleSourceDto,
+  UserSourceWithSource,
+} from '@repo/types';
 
 import { api } from '../lib/api';
 
@@ -14,4 +19,7 @@ export const sourcesApi = {
 
   delete: (sourceId: string, accessToken: string) =>
     api.delete<void>(`/sources/${sourceId}`, { accessToken }),
+
+  addTelegram: (data: AddTelegramSourceDto, accessToken: string) =>
+    api.post<UserSourceWithSource[]>('/sources/telegram', data, { accessToken }),
 };

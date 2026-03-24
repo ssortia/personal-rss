@@ -16,6 +16,7 @@ import type { User } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AddSourceDto } from './dto/add-source.dto';
+import { AddTelegramSourceDto } from './dto/add-telegram-source.dto';
 import { ToggleSourceDto } from './dto/toggle-source.dto';
 import { SourcesService } from './sources.service';
 
@@ -31,6 +32,13 @@ export class SourcesController {
   @ApiOperation({ summary: 'Добавить RSS/Atom-источник по URL' })
   addSource(@CurrentUser() user: User, @Body() dto: AddSourceDto) {
     return this.sourcesService.addSource(user.id, dto.url);
+  }
+
+  @Post('telegram')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Добавить публичный Telegram-канал по username' })
+  addTelegramChannel(@CurrentUser() user: User, @Body() dto: AddTelegramSourceDto) {
+    return this.sourcesService.addTelegramChannel(user.id, dto.username);
   }
 
   @Get()

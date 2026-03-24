@@ -5,11 +5,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { SourceType } from '@prisma/client';
 import Parser from 'rss-parser';
 
 import { ArticlesRepository } from '../articles/articles.repository';
 import { PreferencesRepository } from '../preferences/preferences.repository';
 import { ScoringService } from '../scoring/scoring.service';
+import { TelegramGate } from '../telegram/telegram.gate';
 
 import type { UserSourceWithSource } from './sources.repository';
 import { SourcesRepository } from './sources.repository';
@@ -23,6 +25,7 @@ export class SourcesService {
     private readonly articlesRepository: ArticlesRepository,
     private readonly preferencesRepository: PreferencesRepository,
     private readonly scoringService: ScoringService,
+    private readonly telegramGate: TelegramGate,
   ) {}
 
   /**
@@ -56,9 +59,55 @@ export class SourcesService {
 
     await this.sourcesRepository.createUserSource(userId, source.id);
 
+    // Маппим элементы rss-parser в универсальный формат RawArticle
+    const articles = feed.items.map((item) => ({
+      guid: item.guid ?? item.link ?? item.title ?? '',
+      title: item.title ?? '',
+      url: item.link ?? '',
+      content:
+        item.contentSnippet ?? ((item as Record<string, unknown>)['content'] as string) ?? null,
+      publishedAt: item.pubDate ? new Date(item.pubDate) : null,
+    }));
+
     // Запускаем первичный импорт статей и AI-оценку асинхронно (fire-and-forget)
     void Promise.all([
-      this.articlesRepository.upsertMany(source.id, feed.items),
+      this.articlesRepository.upsertMany(source.id, articles),
+      this.sourcesRepository.updateLastFetchAt(source.id),
+    ]).then(() => this.scoreArticlesForUser(userId, source.id));
+
+    return this.sourcesRepository.findUserSources(userId);
+  }
+
+  /**
+   * Добавляет публичный Telegram-канал как источник.
+   * Принимает username в любом формате: @channel, t.me/channel, https://t.me/channel.
+   */
+  async addTelegramChannel(userId: string, rawUsername: string): Promise<UserSourceWithSource[]> {
+    const username = this.normalizeTelegramUsername(rawUsername);
+
+    const channel = await this.telegramGate.fetchChannel(username);
+    if (!channel) {
+      throw new BadRequestException('Канал не найден или приватный');
+    }
+
+    const url = `https://t.me/${username}`;
+    const source = await this.sourcesRepository.upsertSource({
+      url,
+      title: channel.title,
+      description: channel.description,
+      imageUrl: null,
+      type: SourceType.TELEGRAM,
+    });
+
+    const existing = await this.sourcesRepository.findUserSource(userId, source.id);
+    if (existing) {
+      throw new ConflictException('Источник уже добавлен');
+    }
+
+    await this.sourcesRepository.createUserSource(userId, source.id);
+
+    void Promise.all([
+      this.articlesRepository.upsertMany(source.id, channel.posts),
       this.sourcesRepository.updateLastFetchAt(source.id),
     ]).then(() => this.scoreArticlesForUser(userId, source.id));
 
@@ -118,5 +167,14 @@ export class SourcesService {
       throw new NotFoundException('Источник не найден');
     }
     await this.sourcesRepository.deleteUserSource(userId, sourceId);
+  }
+
+  /** Приводит username к чистому виду без @, https://t.me/ и пробелов. */
+  private normalizeTelegramUsername(raw: string): string {
+    return raw
+      .trim()
+      .replace(/^https?:\/\//i, '')
+      .replace(/^t\.me\//i, '')
+      .replace(/^@/, '');
   }
 }
