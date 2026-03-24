@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 
+import { ArticlesModule } from './articles/articles.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SourcesModule } from './sources/sources.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -21,6 +23,8 @@ import { UsersModule } from './users/users.module';
     MailModule,
     AuthModule,
     UsersModule,
+    ArticlesModule,
+    SourcesModule,
     HealthModule,
   ],
 })

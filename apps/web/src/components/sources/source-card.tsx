@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDeleteSource } from '@/hooks/use-sources';
+import { Switch } from '@/components/ui/switch';
+import { useDeleteSource, useToggleSource } from '@/hooks/use-sources';
 
 interface SourceCardProps {
   userSource: UserSourceWithSource;
@@ -22,10 +23,11 @@ interface SourceCardProps {
 
 export function SourceCard({ userSource }: SourceCardProps) {
   const { source } = userSource;
-  const { mutate: deleteSource, isPending } = useDeleteSource();
+  const { mutate: deleteSource, isPending: isDeleting } = useDeleteSource();
+  const { mutate: toggleSource, isPending: isToggling } = useToggleSource();
 
   return (
-    <Card>
+    <Card className={userSource.isActive ? undefined : 'opacity-60'}>
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
         {source.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -47,6 +49,14 @@ export function SourceCard({ userSource }: SourceCardProps) {
           <CardDescription className="truncate text-xs">{source.url}</CardDescription>
         </div>
 
+        {/* Переключатель активности */}
+        <Switch
+          checked={userSource.isActive}
+          disabled={isToggling}
+          onCheckedChange={(isActive) => toggleSource({ sourceId: source.id, isActive })}
+          aria-label={userSource.isActive ? 'Отключить источник' : 'Включить источник'}
+        />
+
         {/* Кнопка удаления с диалогом подтверждения */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -54,7 +64,7 @@ export function SourceCard({ userSource }: SourceCardProps) {
               variant="ghost"
               size="icon"
               className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
-              disabled={isPending}
+              disabled={isDeleting}
             >
               <Trash2 className="h-4 w-4" />
               <span className="sr-only">Удалить источник</span>

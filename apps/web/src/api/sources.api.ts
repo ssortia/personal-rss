@@ -1,4 +1,4 @@
-import type { AddSourceDto, UserSourceWithSource } from '@repo/types';
+import type { AddSourceDto, ToggleSourceDto, UserSourceWithSource } from '@repo/types';
 
 import { api } from '../lib/api';
 
@@ -8,6 +8,9 @@ export const sourcesApi = {
     api.post<UserSourceWithSource[]>('/sources', data, { accessToken }),
 
   list: (accessToken: string) => api.get<UserSourceWithSource[]>('/sources', { accessToken }),
+
+  toggle: (sourceId: string, data: ToggleSourceDto, accessToken: string) =>
+    api.patch<void>(`/sources/${sourceId}/toggle`, data, { accessToken }),
 
   delete: (sourceId: string, accessToken: string) =>
     api.delete<void>(`/sources/${sourceId}`, { accessToken }),

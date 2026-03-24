@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import type { User } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AddSourceDto } from './dto/add-source.dto';
+import { ToggleSourceDto } from './dto/toggle-source.dto';
 import { SourcesService } from './sources.service';
 
 @ApiTags('sources')
@@ -35,6 +37,17 @@ export class SourcesController {
   @ApiOperation({ summary: 'Получить список источников текущего пользователя' })
   getUserSources(@CurrentUser() user: User) {
     return this.sourcesService.getUserSources(user.id);
+  }
+
+  @Patch(':id/toggle')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Включить или отключить источник' })
+  toggleSource(
+    @CurrentUser() user: User,
+    @Param('id') sourceId: string,
+    @Body() dto: ToggleSourceDto,
+  ) {
+    return this.sourcesService.toggleSource(user.id, sourceId, dto.isActive);
   }
 
   @Delete(':id')

@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
-import type { AddSourceDto } from '@repo/types';
+import type { AddSourceDto, ToggleSourceDto } from '@repo/types';
 
 import { sourcesApi } from '../api/sources.api';
 import { ApiError } from '../lib/api';
@@ -24,6 +24,17 @@ export function useAddSource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AddSourceDto) => sourcesApi.add(data, session!.accessToken!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+  });
+}
+
+/** Хук для переключения активности источника с оптимистичным обновлением кэша. */
+export function useToggleSource() {
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sourceId, ...data }: ToggleSourceDto & { sourceId: string }) =>
+      sourcesApi.toggle(sourceId, data, session!.accessToken!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
   });
 }

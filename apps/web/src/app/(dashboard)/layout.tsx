@@ -21,7 +21,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <header className="border-b">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
             <div className="flex items-center gap-6">
-              <h1 className="text-xl font-semibold">NexST</h1>
+              <Link href="/" className="text-xl font-semibold">
+                Curio
+              </Link>
+              <Link
+                href="/sources"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                Источники
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin/users"

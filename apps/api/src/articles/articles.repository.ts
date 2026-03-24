@@ -1,0 +1,29 @@
+import { Injectable } from '@nestjs/common';
+import type { Item } from 'rss-parser';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class ArticlesRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** Сохраняет статьи из RSS-фида, пропуская уже существующие (по sourceId + guid). */
+  async upsertMany(sourceId: string, items: Item[]): Promise<void> {
+    const data = items
+      .filter((item) => item.title) // пропускаем элементы без заголовка
+      .map((item) => ({
+        sourceId,
+        guid: item.guid ?? item.link ?? item.title ?? '',
+        title: item.title ?? '',
+        url: item.link ?? '',
+        content:
+          item.contentSnippet ?? ((item as Record<string, unknown>)['content'] as string) ?? null,
+        publishedAt: item.pubDate ? new Date(item.pubDate) : null,
+      }))
+      .filter((a) => a.guid); // исключаем статьи без идентификатора
+
+    if (data.length === 0) return;
+
+    await this.prisma.article.createMany({ data, skipDuplicates: true });
+  }
+}

@@ -62,6 +62,18 @@ export class SourcesService {
   }
 
   /**
+   * Переключает активность источника для пользователя.
+   * Неактивные источники не обходятся планировщиком и не попадают в фид.
+   */
+  async toggleSource(userId: string, sourceId: string, isActive: boolean): Promise<void> {
+    const existing = await this.sourcesRepository.findUserSource(userId, sourceId);
+    if (!existing) {
+      throw new NotFoundException('Источник не найден');
+    }
+    await this.sourcesRepository.toggleUserSource(userId, sourceId, isActive);
+  }
+
+  /**
    * Удаляет источник из списка пользователя.
    * Статьи из фида исчезнут автоматически, так как привязаны к источнику.
    */

@@ -56,6 +56,13 @@ export class SourcesRepository {
     });
   }
 
+  toggleUserSource(userId: string, sourceId: string, isActive: boolean): Promise<UserSource> {
+    return this.prisma.userSource.update({
+      where: { userId_sourceId: { userId, sourceId } },
+      data: { isActive },
+    });
+  }
+
   deleteUserSource(userId: string, sourceId: string): Promise<UserSource> {
     return this.prisma.userSource.delete({
       where: { userId_sourceId: { userId, sourceId } },

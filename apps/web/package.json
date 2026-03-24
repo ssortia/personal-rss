@@ -14,6 +14,7 @@
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.1",
+    "@radix-ui/react-switch": "^1.2.6",
     "@repo/types": "workspace:*",
     "@ssortia/shadcn-zod-bridge": "^0.1.0",
     "@t3-oss/env-nextjs": "^0.13.10",
