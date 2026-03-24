@@ -1,5 +1,7 @@
+'use client';
+
 import type { UserSourceWithSource } from '@repo/types';
-import { AlertCircle, Clock, Trash2 } from 'lucide-react';
+import { AlertCircle, Clock, EllipsisVertical, Power, Trash2 } from 'lucide-react';
 
 import {
   AlertDialog,
@@ -12,23 +14,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useDeleteSource, useToggleSource } from '@/hooks/use-sources';
+
+import { SourceFavicon } from './source-favicon';
 
 interface SourceCardProps {
   userSource: UserSourceWithSource;
 }
 
-/** Форматирует дату в читаемый относительный вид. */
+/** Форматирует дату последней синхронизации в читаемый вид. */
 function formatSyncTime(date: Date | string): string {
   const diff = Date.now() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60_000);
@@ -41,63 +42,62 @@ function formatSyncTime(date: Date | string): string {
   return `${days} дн. назад`;
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  RSS: 'RSS',
+  ATOM: 'Atom',
+  TELEGRAM: 'Telegram',
+};
+
 export function SourceCard({ userSource }: SourceCardProps) {
   const { source } = userSource;
-  const { mutate: deleteSource, isPending: isDeleting } = useDeleteSource();
   const { mutate: toggleSource, isPending: isToggling } = useToggleSource();
+  const { mutate: deleteSource, isPending: isDeleting } = useDeleteSource();
 
   const hasError = !!source.lastError;
+  const isActive = userSource.isActive;
 
   return (
-    <Card className={userSource.isActive ? undefined : 'opacity-60'}>
-      <CardHeader className="flex flex-row items-start gap-3 space-y-0">
-        {source.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={source.imageUrl}
-            alt=""
-            className="h-8 w-8 rounded object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded text-xs font-medium">
-            {source.title.slice(0, 2).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <CardTitle className="truncate text-base">{source.title}</CardTitle>
-            {/* Бейдж типа источника */}
-            <span className="text-muted-foreground bg-muted shrink-0 rounded px-1.5 py-0.5 text-xs font-medium">
-              {source.type === 'TELEGRAM' ? 'TG' : source.type}
-            </span>
-          </div>
-          <CardDescription className="truncate text-xs">{source.url}</CardDescription>
-        </div>
-
-        {/* Переключатель активности */}
-        <Switch
-          checked={userSource.isActive}
-          disabled={isToggling}
-          onCheckedChange={(isActive) => toggleSource({ sourceId: source.id, isActive })}
-          aria-label={userSource.isActive ? 'Отключить источник' : 'Включить источник'}
-        />
-
-        {/* Кнопка удаления с диалогом подтверждения */}
+    <div
+      className={[
+        'bg-card border-border group relative flex flex-col gap-3 rounded-xl border p-4 transition-shadow hover:shadow-sm',
+        !isActive && 'opacity-50',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {/* Меню действий — появляется при hover */}
+      <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Удалить источник</span>
-            </Button>
-          </AlertDialogTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                aria-label="Действия"
+              >
+                <EllipsisVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => toggleSource({ sourceId: source.id, isActive: !isActive })}
+                disabled={isToggling}
+              >
+                <Power className="h-4 w-4" />
+                {isActive ? 'Отключить' : 'Включить'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Удалить
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Удалить источник?</AlertDialogTitle>
@@ -117,35 +117,36 @@ export function SourceCard({ userSource }: SourceCardProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardHeader>
+      </div>
 
-      {source.description && (
-        <CardContent className="pb-0">
-          <p className="text-muted-foreground line-clamp-2 text-sm">{source.description}</p>
-        </CardContent>
-      )}
+      {/* Иконка + название + URL */}
+      <div className="flex items-center gap-3 pr-6">
+        <SourceFavicon url={source.url} type={source.type} imageUrl={source.imageUrl} size={32} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium leading-snug">{source.title}</p>
+          <p className="text-muted-foreground truncate text-xs">{source.url}</p>
+        </div>
+      </div>
 
-      {/* Футер: ошибка или время последней синхронизации */}
-      <CardFooter className="pt-3">
+      {/* Footer: тип + статус */}
+      <div className="border-border flex items-center gap-2 border-t pt-2.5">
+        <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+          {TYPE_LABEL[source.type] ?? source.type}
+        </span>
         {hasError ? (
-          <div className="text-destructive flex items-center gap-1.5 text-xs">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate" title={source.lastError ?? undefined}>
-              Ошибка синхронизации
-            </span>
-          </div>
-        ) : source.lastFetchAt ? (
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            <Clock className="h-3.5 w-3.5 shrink-0" />
-            <span>Синхронизировано {formatSyncTime(source.lastFetchAt)}</span>
+          <div className="text-destructive flex items-center gap-1 text-xs">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            <span>Ошибка синхронизации</span>
           </div>
         ) : (
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            <Clock className="h-3.5 w-3.5 shrink-0" />
-            <span>Синхронизация не выполнялась</span>
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+            <Clock className="h-3 w-3 shrink-0" />
+            <span>
+              {source.lastFetchAt ? formatSyncTime(source.lastFetchAt) : 'Ещё не синхронизировано'}
+            </span>
           </div>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

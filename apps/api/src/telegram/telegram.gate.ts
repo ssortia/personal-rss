@@ -12,6 +12,7 @@ export interface TelegramPost {
 export interface TelegramChannelData {
   title: string;
   description: string | null;
+  imageUrl: string | null;
   posts: TelegramPost[];
 }
 
@@ -53,6 +54,9 @@ export class TelegramGate {
 
     const description = $('meta[property="og:description"]').attr('content') ?? null;
 
+    // Аватар канала из og:image (Telegram подставляет его для публичных каналов)
+    const imageUrl = $('meta[property="og:image"]').attr('content') ?? null;
+
     const posts: TelegramPost[] = [];
 
     // data-post находится на .tgme_widget_message, а не на .tgme_widget_message_wrap
@@ -75,6 +79,6 @@ export class TelegramGate {
       posts.push({ guid: dataPost, title, url: postUrl, content, publishedAt });
     });
 
-    return { title, description, posts };
+    return { title, description, imageUrl, posts };
   }
 }

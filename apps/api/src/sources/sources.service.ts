@@ -89,7 +89,7 @@ export class SourcesService {
       url,
       title: channel.title,
       description: channel.description,
-      imageUrl: null,
+      imageUrl: channel.imageUrl,
       type: SourceType.TELEGRAM,
     });
 
