@@ -13,6 +13,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Check, Copy, RotateCcw } from 'lucide-react';
+
 import { useFeedToken, useResetFeedToken } from '@/hooks/use-feed-token';
 import { env } from '@/lib/env';
 
@@ -41,19 +43,23 @@ export function FeedUrlWidget() {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <code className="bg-muted text-muted-foreground min-w-0 flex-1 truncate rounded px-3 py-2 text-xs">
-          {feedUrl}
-        </code>
-        <button
-          onClick={handleCopy}
-          className="text-muted-foreground hover:text-foreground shrink-0 text-sm transition-colors"
-        >
-          {copied ? 'Скопировано' : 'Копировать'}
-        </button>
+        <div className="bg-muted flex min-w-0 flex-1 items-center gap-2 rounded px-3 py-2">
+          <code className="text-muted-foreground min-w-0 flex-1 truncate text-xs">{feedUrl}</code>
+          <button
+            onClick={handleCopy}
+            aria-label={copied ? 'Скопировано' : 'Копировать ссылку'}
+            className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer transition-colors"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+        </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <button className="text-muted-foreground hover:text-destructive shrink-0 text-sm transition-colors">
-              Сбросить
+            <button
+              aria-label="Сбросить ссылку на фид"
+              className="text-muted-foreground hover:text-destructive shrink-0 cursor-pointer transition-colors"
+            >
+              <RotateCcw className="h-4 w-4" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent>
