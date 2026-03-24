@@ -25,6 +25,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 Curio
               </Link>
               <Link
+                href="/"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                Фид
+              </Link>
+              <Link
                 href="/sources"
                 className="text-muted-foreground hover:text-foreground text-sm transition-colors"
               >
