@@ -2,9 +2,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { RoleProvider } from '@/components/auth/role-provider';
+import { NavLinks } from '@/components/layout/nav-links';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 import { auth, signOut } from '../../auth';
+
+const adminNavItems = [{ href: '/admin/users', label: 'Пользователи' }];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -20,22 +23,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <RoleProvider role={session.user.role}>
       <div className="bg-background min-h-screen">
-        <header className="border-b">
-          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <header className="bg-card/80 sticky top-0 z-40 border-b backdrop-blur-sm">
+          <div className="container mx-auto flex h-14 items-center justify-between px-4">
             <div className="flex items-center gap-6">
-              <Link href="/" className="text-xl font-semibold">
-                NexST
+              <Link href="/" className="text-primary text-lg font-bold tracking-tight">
+                Curio
               </Link>
-              <Link
-                href="/admin/users"
-                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-              >
-                Пользователи
-              </Link>
+              <span className="text-muted-foreground text-sm">Админ</span>
+              <nav className="flex items-center gap-6">
+                <NavLinks items={adminNavItems} />
+              </nav>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <ThemeToggle />
-              <span className="text-muted-foreground text-sm">{session.user?.email}</span>
+              <span className="text-muted-foreground desktop-inline text-sm">
+                {session.user?.email}
+              </span>
               <form
                 action={async () => {
                   'use server';

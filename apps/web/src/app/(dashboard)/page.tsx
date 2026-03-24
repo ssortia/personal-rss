@@ -1,7 +1,11 @@
 'use client';
 
+import Link from 'next/link';
+
 import { ArticleCard } from '@/components/feed/article-card';
 import { FeedUrlWidget } from '@/components/feed/feed-url-widget';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useFeed } from '@/hooks/use-feed';
 
 function FeedSkeleton() {
@@ -9,8 +13,8 @@ function FeedSkeleton() {
     <div className="space-y-4">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="border-b py-4">
-          <div className="bg-muted mb-2 h-4 w-3/4 animate-pulse rounded" />
-          <div className="bg-muted h-3 w-1/3 animate-pulse rounded" />
+          <Skeleton className="mb-2 h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/3" />
         </div>
       ))}
     </div>
@@ -18,7 +22,7 @@ function FeedSkeleton() {
 }
 
 export default function FeedPage() {
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useFeed();
+  const { data, isLoading, isError, isFetchingNextPage, hasNextPage, fetchNextPage } = useFeed();
 
   const articles = data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -34,10 +38,24 @@ export default function FeedPage() {
 
       {isLoading ? (
         <FeedSkeleton />
+      ) : isError ? (
+        <EmptyState
+          title="Не удалось загрузить статьи"
+          description="Проверьте соединение и попробуйте обновить страницу"
+        />
       ) : articles.length === 0 ? (
-        <p className="text-muted-foreground py-12 text-center text-sm">
-          Нет статей. Добавьте источники в разделе «Источники» и настройте интересы.
-        </p>
+        <EmptyState
+          title="Статей пока нет"
+          description={
+            <span>
+              Добавьте источники в{' '}
+              <Link href="/sources" className="text-primary underline-offset-4 hover:underline">
+                разделе «Источники»
+              </Link>{' '}
+              и настройте интересы
+            </span>
+          }
+        />
       ) : (
         <>
           <div>

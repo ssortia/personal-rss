@@ -1,47 +1,24 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 import { usePreferencesSettings, useUpdatePreferencesSettings } from '@/hooks/use-preferences';
-
-/** Debounce-хелпер: вызывает fn не чаще чем раз в delay мс. */
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 
 export function ThresholdSlider() {
   const { data: settings, isLoading } = usePreferencesSettings();
   const { mutate: updateSettings } = useUpdatePreferencesSettings();
 
-  const [localValue, setLocalValue] = useState<number>(0.6);
-  const debouncedValue = useDebounce(localValue, 500);
+  const [localValue, setLocalValue] = useState<number | null>(null);
 
+  // Инициализируем localValue из настроек — только один раз при загрузке
   useEffect(() => {
-    if (settings?.relevanceThreshold !== undefined) {
+    if (settings?.relevanceThreshold !== undefined && localValue === null) {
       setLocalValue(settings.relevanceThreshold);
     }
-  }, [settings?.relevanceThreshold]);
+  }, [settings?.relevanceThreshold, localValue]);
 
-  const save = useCallback(
-    (value: number) => {
-      if (settings?.relevanceThreshold !== undefined && value !== settings.relevanceThreshold) {
-        updateSettings({ relevanceThreshold: value });
-      }
-    },
-    [settings?.relevanceThreshold, updateSettings],
-  );
-
-  useEffect(() => {
-    save(debouncedValue);
-  }, [debouncedValue, save]);
-
-  if (isLoading) {
+  if (isLoading || localValue === null) {
     return <div className="bg-muted h-5 w-full animate-pulse rounded" />;
   }
 
@@ -59,6 +36,7 @@ export function ThresholdSlider() {
         step={0.05}
         value={[localValue]}
         onValueChange={([value]) => setLocalValue(value)}
+        onValueCommit={([value]) => updateSettings({ relevanceThreshold: value })}
       />
       <div className="text-muted-foreground flex justify-between text-xs">
         <span>0 — всё подряд</span>

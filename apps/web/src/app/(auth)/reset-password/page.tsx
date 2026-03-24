@@ -8,10 +8,8 @@ export const metadata: Metadata = { title: 'Сброс пароля | Curio' };
 
 export default function ResetPasswordPage() {
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center">
-      <Suspense>
-        <ResetPasswordForm />
-      </Suspense>
-    </div>
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

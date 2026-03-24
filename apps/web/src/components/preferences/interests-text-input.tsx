@@ -40,13 +40,16 @@ export function InterestsTextInput() {
   }
 
   return (
-    <Textarea
-      value={localValue}
-      onChange={(e) => setLocalValue(e.target.value)}
-      placeholder="Например: интересует Go, distributed systems, AI. Не интересует политика и спорт."
-      className="resize-none"
-      rows={3}
-      maxLength={2000}
-    />
+    <div className="space-y-1">
+      <Textarea
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        placeholder="Например: интересует Go, distributed systems, AI. Не интересует политика и спорт."
+        className="resize-none"
+        rows={4}
+        maxLength={2000}
+      />
+      <p className="text-muted-foreground text-right text-xs">{localValue.length} / 2000</p>
+    </div>
   );
 }

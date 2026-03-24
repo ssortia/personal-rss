@@ -39,37 +39,39 @@ export function FeedUrlWidget() {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <code className="bg-muted text-muted-foreground flex-1 truncate rounded px-3 py-2 text-xs">
-        {feedUrl}
-      </code>
-      <button
-        onClick={handleCopy}
-        className="text-muted-foreground hover:text-foreground shrink-0 text-sm transition-colors"
-      >
-        {copied ? 'Скопировано' : 'Копировать'}
-      </button>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <button className="text-muted-foreground hover:text-destructive shrink-0 text-sm transition-colors">
-            Сбросить
-          </button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Сбросить ссылку на фид?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Старая ссылка перестанет работать. Все подключённые ридеры нужно будет обновить.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={() => resetToken()} disabled={isPending}>
-              {isPending ? 'Сброс...' : 'Сбросить'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <code className="bg-muted text-muted-foreground min-w-0 flex-1 truncate rounded px-3 py-2 text-xs">
+          {feedUrl}
+        </code>
+        <button
+          onClick={handleCopy}
+          className="text-muted-foreground hover:text-foreground shrink-0 text-sm transition-colors"
+        >
+          {copied ? 'Скопировано' : 'Копировать'}
+        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="text-muted-foreground hover:text-destructive shrink-0 text-sm transition-colors">
+              Сбросить
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Сбросить ссылку на фид?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Старая ссылка перестанет работать. Все подключённые ридеры нужно будет обновить.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={() => resetToken()} disabled={isPending}>
+                {isPending ? 'Сброс...' : 'Сбросить'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useCategories,
   usePreferencesSettings,
@@ -7,12 +8,22 @@ import {
 } from '@/hooks/use-preferences';
 
 export function CategoryPicker() {
-  const { data: categories, isLoading: loadingCategories } = useCategories();
+  const { data: categories, isLoading: loadingCategories, isError } = useCategories();
   const { data: settings, isLoading: loadingSettings } = usePreferencesSettings();
   const { mutate: updateSettings, isPending } = useUpdatePreferencesSettings();
 
   if (loadingCategories || loadingSettings) {
-    return <p className="text-muted-foreground text-sm">Загрузка...</p>;
+    return (
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-20 rounded-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-muted-foreground text-sm">Не удалось загрузить категории</p>;
   }
 
   const selectedSlugs = new Set(settings?.selectedCategories ?? []);

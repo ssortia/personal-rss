@@ -1,15 +1,8 @@
-'use client';
-
-import { useState } from 'react';
-
 import type { ArticleFeedItem } from '@repo/types';
 
 interface Props {
   article: ArticleFeedItem;
 }
-
-/** Порог длины контента Telegram-поста, после которого показываем кнопку «Показать полностью». */
-const TELEGRAM_PREVIEW_LENGTH = 300;
 
 function formatDate(date: Date | null): string {
   if (!date) return '';
@@ -37,31 +30,17 @@ function ScoreBadge({ score }: { score: number | null }) {
 }
 
 function TelegramContent({ content, url }: { content: string; url: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const isLong = content.length > TELEGRAM_PREVIEW_LENGTH;
-  const displayed = isLong && !expanded ? content.slice(0, TELEGRAM_PREVIEW_LENGTH) + '…' : content;
-
   return (
     <div className="space-y-1">
-      <p className="whitespace-pre-wrap text-sm leading-relaxed">{displayed}</p>
-      <div className="flex items-center gap-3">
-        {isLong && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-          >
-            {expanded ? 'Свернуть' : 'Показать полностью'}
-          </button>
-        )}
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-        >
-          Открыть в Telegram →
-        </a>
-      </div>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+      >
+        Открыть в Telegram →
+      </a>
     </div>
   );
 }
@@ -70,7 +49,7 @@ export function ArticleCard({ article }: Props) {
   const isTelegram = article.sourceType === 'TELEGRAM';
 
   return (
-    <article className="border-b py-4 last:border-b-0">
+    <article className="hover:bg-muted/50 group -mx-3 rounded-lg border-b px-3 py-4 transition-colors last:border-b-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-1">
           {isTelegram ? (
@@ -81,7 +60,7 @@ export function ArticleCard({ article }: Props) {
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary line-clamp-2 block font-medium leading-snug transition-colors"
+              className="group-hover:text-primary line-clamp-2 block font-medium leading-snug transition-colors"
             >
               {article.title}
             </a>
