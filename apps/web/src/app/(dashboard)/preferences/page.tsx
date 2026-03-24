@@ -1,6 +1,7 @@
 'use client';
 
 import { CategoryPicker } from '@/components/preferences/category-picker';
+import { InterestsTextInput } from '@/components/preferences/interests-text-input';
 import { ThresholdSlider } from '@/components/preferences/threshold-slider';
 
 export default function PreferencesPage() {
@@ -12,6 +13,14 @@ export default function PreferencesPage() {
           Настройте фильтрацию новостей под свои интересы
         </p>
       </div>
+
+      <section className="space-y-3">
+        <h2 className="font-medium">Описание интересов</h2>
+        <p className="text-muted-foreground text-sm">
+          Опишите свои интересы в свободной форме — AI будет учитывать это при оценке статей
+        </p>
+        <InterestsTextInput />
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-medium">Категории</h2>

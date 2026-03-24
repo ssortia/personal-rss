@@ -21,7 +21,7 @@ export class ArticlesController {
   @Get()
   @ApiOperation({ summary: 'Персональный фид статей с AI-фильтрацией' })
   async getFeed(@CurrentUser() user: User, @Query() dto: GetFeedDto) {
-    const { threshold } = await this.preferencesRepository.getUserThreshold(user.id);
-    return this.articlesService.getFeed(user.id, threshold, dto.cursor, dto.limit);
+    const { relevanceThreshold } = await this.preferencesRepository.getSettings(user.id);
+    return this.articlesService.getFeed(user.id, relevanceThreshold, dto.cursor, dto.limit);
   }
 }

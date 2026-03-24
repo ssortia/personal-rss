@@ -22,17 +22,22 @@ export class ScoringService {
   constructor(private readonly groqGate: GroqGate) {}
 
   /** Оценивает релевантность статьи для пользователя с заданными интересами. */
-  async score(article: ArticleInput, categories: string[]): Promise<ScoreResult> {
+  async score(
+    article: ArticleInput,
+    categories: string[],
+    interestsText?: string | null,
+  ): Promise<ScoreResult> {
     if (!this.groqGate.isAvailable) {
       return NEUTRAL;
     }
 
     const content = (article.content ?? '').slice(0, 1000);
     const categoryList = categories.length > 0 ? categories.join(', ') : 'не указаны';
+    const interestsLine = interestsText ? `User interests (free text): ${interestsText}\n` : '';
 
     const prompt = `You are a news relevance scorer. Given a user's interests and an article, return a JSON object with a relevance score from 0.0 to 1.0 and a short reason.
 
-User interests (categories): ${categoryList}
+${interestsLine}User interests (categories): ${categoryList}
 
 Article title: ${article.title}
 Article content (excerpt): ${content}

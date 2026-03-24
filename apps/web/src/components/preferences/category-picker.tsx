@@ -1,36 +1,40 @@
 'use client';
 
-import { useCategories, useUpdatePreferences, useUserPreferences } from '@/hooks/use-preferences';
+import {
+  useCategories,
+  usePreferencesSettings,
+  useUpdatePreferencesSettings,
+} from '@/hooks/use-preferences';
 
 export function CategoryPicker() {
   const { data: categories, isLoading: loadingCategories } = useCategories();
-  const { data: userPreferences, isLoading: loadingPreferences } = useUserPreferences();
-  const { mutate: updatePreferences, isPending } = useUpdatePreferences();
+  const { data: settings, isLoading: loadingSettings } = usePreferencesSettings();
+  const { mutate: updateSettings, isPending } = useUpdatePreferencesSettings();
 
-  if (loadingCategories || loadingPreferences) {
+  if (loadingCategories || loadingSettings) {
     return <p className="text-muted-foreground text-sm">Загрузка...</p>;
   }
 
-  const selectedIds = new Set(userPreferences?.map((p) => p.categoryId) ?? []);
+  const selectedSlugs = new Set(settings?.selectedCategories ?? []);
 
-  function toggle(categoryId: string) {
-    const next = new Set(selectedIds);
-    if (next.has(categoryId)) {
-      next.delete(categoryId);
+  function toggle(slug: string) {
+    const next = new Set(selectedSlugs);
+    if (next.has(slug)) {
+      next.delete(slug);
     } else {
-      next.add(categoryId);
+      next.add(slug);
     }
-    updatePreferences({ categoryIds: Array.from(next) });
+    updateSettings({ selectedCategories: Array.from(next) });
   }
 
   return (
     <div className="flex flex-wrap gap-2">
       {categories?.map((category) => {
-        const selected = selectedIds.has(category.id);
+        const selected = selectedSlugs.has(category.slug);
         return (
           <button
             key={category.id}
-            onClick={() => toggle(category.id)}
+            onClick={() => toggle(category.slug)}
             disabled={isPending}
             className={[
               'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',

@@ -1,9 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { Category, UserPreference } from '@prisma/client';
+import type { Category } from '@prisma/client';
+
+import type { PreferencesSettings } from '@repo/types';
 
 import { PrismaService } from '../prisma/prisma.service';
 
-export type UserPreferenceWithCategory = UserPreference & { category: Category };
+const DEFAULTS: Required<PreferencesSettings> = {
+  relevanceThreshold: 0.6,
+  interestsText: null,
+  selectedCategories: [],
+};
 
 @Injectable()
 export class PreferencesRepository {
@@ -13,44 +19,103 @@ export class PreferencesRepository {
     return this.prisma.category.findMany({ orderBy: { name: 'asc' } });
   }
 
-  findUserPreferences(userId: string): Promise<UserPreferenceWithCategory[]> {
-    return this.prisma.userPreference.findMany({
-      where: { userId },
-      include: { category: true },
-      orderBy: { category: { name: 'asc' } },
+  /**
+   * Возвращает настройки пользователя.
+   * sourceId = undefined → глобальные настройки.
+   * sourceId = X → per-source настройки (merge поверх глобальных).
+   */
+  async getSettings(userId: string, sourceId?: string): Promise<PreferencesSettings> {
+    if (sourceId) {
+      // Получаем оба ряда отдельными запросами (Prisma не поддерживает OR с null в in-фильтре)
+      const [globalRow, sourceRow] = await Promise.all([
+        this.prisma.userPreferences.findFirst({ where: { userId, sourceId: null } }),
+        this.prisma.userPreferences.findFirst({ where: { userId, sourceId } }),
+      ]);
+      const global = globalRow;
+      const source = sourceRow;
+      const globalSettings = this.parseSettings(global?.settings);
+      const sourceSettings = this.parseSettings(source?.settings);
+      // Поля источника переопределяют глобальные только если явно заданы
+      return {
+        relevanceThreshold:
+          sourceSettings.relevanceThreshold ??
+          globalSettings.relevanceThreshold ??
+          DEFAULTS.relevanceThreshold,
+        interestsText:
+          sourceSettings.interestsText !== undefined
+            ? sourceSettings.interestsText
+            : (globalSettings.interestsText ?? DEFAULTS.interestsText),
+        selectedCategories:
+          sourceSettings.selectedCategories ??
+          globalSettings.selectedCategories ??
+          DEFAULTS.selectedCategories,
+      };
+    }
+
+    // findFirst т.к. Prisma не поддерживает findUnique с null в составном ключе
+    const row = await this.prisma.userPreferences.findFirst({
+      where: { userId, sourceId: null },
     });
+    return this.mergeWithDefaults(this.parseSettings(row?.settings));
   }
 
-  async getUserThreshold(userId: string): Promise<{ threshold: number }> {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { relevanceThreshold: true },
-    });
-    return { threshold: user.relevanceThreshold };
-  }
-
-  async updateUserThreshold(userId: string, threshold: number): Promise<{ threshold: number }> {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { relevanceThreshold: threshold },
-      select: { relevanceThreshold: true },
-    });
-    return { threshold: user.relevanceThreshold };
-  }
-
-  /** Заменяет все предпочтения пользователя в одной транзакции. */
-  async replaceUserPreferences(
+  /**
+   * Обновляет настройки (partial merge с существующими).
+   * sourceId = undefined → глобальные, sourceId = X → per-source.
+   */
+  async updateSettings(
     userId: string,
-    categoryIds: string[],
-  ): Promise<UserPreferenceWithCategory[]> {
-    await this.prisma.$transaction([
-      this.prisma.userPreference.deleteMany({ where: { userId } }),
-      this.prisma.userPreference.createMany({
-        data: categoryIds.map((categoryId) => ({ userId, categoryId })),
-        skipDuplicates: true,
-      }),
-    ]);
+    patch: Partial<PreferencesSettings>,
+    sourceId?: string,
+  ): Promise<PreferencesSettings> {
+    const resolvedSourceId = sourceId ?? null;
 
-    return this.findUserPreferences(userId);
+    // findFirst т.к. Prisma не поддерживает findUnique/upsert с null в составном ключе
+    const existing = await this.prisma.userPreferences.findFirst({
+      where: { userId, sourceId: resolvedSourceId },
+    });
+
+    const current = this.parseSettings(existing?.settings);
+    const merged = { ...current, ...patch };
+
+    if (existing) {
+      await this.prisma.userPreferences.update({
+        where: { id: existing.id },
+        data: { settings: merged },
+      });
+    } else {
+      await this.prisma.userPreferences.create({
+        data: { userId, sourceId: resolvedSourceId, settings: merged },
+      });
+    }
+
+    return this.mergeWithDefaults(merged);
+  }
+
+  /** Сбрасывает per-source настройки — источник начинает использовать глобальные. */
+  async resetSourceSettings(userId: string, sourceId: string): Promise<void> {
+    await this.prisma.userPreferences.deleteMany({ where: { userId, sourceId } });
+  }
+
+  private parseSettings(raw: unknown): Partial<PreferencesSettings> {
+    if (!raw || typeof raw !== 'object') return {};
+    const s = raw as Record<string, unknown>;
+    const result: Partial<PreferencesSettings> = {};
+    if (typeof s['relevanceThreshold'] === 'number')
+      result.relevanceThreshold = s['relevanceThreshold'];
+    if (s['interestsText'] === null || typeof s['interestsText'] === 'string')
+      result.interestsText = s['interestsText'] as string | null;
+    if (Array.isArray(s['selectedCategories']))
+      result.selectedCategories = s['selectedCategories'] as string[];
+    return result;
+  }
+
+  private mergeWithDefaults(settings: Partial<PreferencesSettings>): PreferencesSettings {
+    return {
+      relevanceThreshold: settings.relevanceThreshold ?? DEFAULTS.relevanceThreshold,
+      interestsText:
+        settings.interestsText !== undefined ? settings.interestsText : DEFAULTS.interestsText,
+      selectedCategories: settings.selectedCategories ?? DEFAULTS.selectedCategories,
+    };
   }
 }

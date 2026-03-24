@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
-import { useThreshold, useUpdateThreshold } from '@/hooks/use-preferences';
+import { usePreferencesSettings, useUpdatePreferencesSettings } from '@/hooks/use-preferences';
 
 /** Debounce-хелпер: вызывает fn не чаще чем раз в delay мс. */
 function useDebounce<T>(value: T, delay: number): T {
@@ -16,27 +16,25 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function ThresholdSlider() {
-  const { data, isLoading } = useThreshold();
-  const { mutate: updateThreshold } = useUpdateThreshold();
+  const { data: settings, isLoading } = usePreferencesSettings();
+  const { mutate: updateSettings } = useUpdatePreferencesSettings();
 
   const [localValue, setLocalValue] = useState<number>(0.6);
   const debouncedValue = useDebounce(localValue, 500);
 
-  // Инициализируем локальное значение после загрузки
   useEffect(() => {
-    if (data?.threshold !== undefined) {
-      setLocalValue(data.threshold);
+    if (settings?.relevanceThreshold !== undefined) {
+      setLocalValue(settings.relevanceThreshold);
     }
-  }, [data?.threshold]);
+  }, [settings?.relevanceThreshold]);
 
-  // Сохраняем после debounce, только если значение изменилось
   const save = useCallback(
     (value: number) => {
-      if (data?.threshold !== undefined && value !== data.threshold) {
-        updateThreshold({ threshold: value });
+      if (settings?.relevanceThreshold !== undefined && value !== settings.relevanceThreshold) {
+        updateSettings({ relevanceThreshold: value });
       }
     },
-    [data?.threshold, updateThreshold],
+    [settings?.relevanceThreshold, updateSettings],
   );
 
   useEffect(() => {

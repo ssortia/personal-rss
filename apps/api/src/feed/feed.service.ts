@@ -27,8 +27,13 @@ export class FeedService {
     const user = await this.usersService.findByFeedToken(token);
     if (!user) throw new NotFoundException('Фид не найден');
 
-    const { threshold } = await this.preferencesRepository.getUserThreshold(user.id);
-    const { items } = await this.articlesRepository.getFeed(user.id, threshold, undefined, 50);
+    const { relevanceThreshold } = await this.preferencesRepository.getSettings(user.id);
+    const { items } = await this.articlesRepository.getFeed(
+      user.id,
+      relevanceThreshold,
+      undefined,
+      50,
+    );
 
     const itemsXml = items
       .map((item) => {

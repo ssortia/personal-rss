@@ -9,29 +9,15 @@ export const CategorySchema = z.object({
 });
 export type Category = z.infer<typeof CategorySchema>;
 
-export const UserPreferenceWithCategorySchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  categoryId: z.string(),
-  createdAt: z.coerce.date(),
-  category: CategorySchema,
+export const PreferencesSettingsSchema = z.object({
+  relevanceThreshold: z.number().min(0).max(1).default(0.6),
+  interestsText: z.string().max(2000).nullable().default(null),
+  selectedCategories: z.array(z.string()).default([]),
 });
-export type UserPreferenceWithCategory = z.infer<typeof UserPreferenceWithCategorySchema>;
+export type PreferencesSettings = z.infer<typeof PreferencesSettingsSchema>;
 
-export const UpdatePreferencesDtoSchema = z.object({
-  categoryIds: z.array(z.string()),
-});
+export const UpdatePreferencesDtoSchema = PreferencesSettingsSchema.partial();
 export type UpdatePreferencesDto = z.infer<typeof UpdatePreferencesDtoSchema>;
-
-export const ThresholdSchema = z.object({
-  threshold: z.number().min(0).max(1),
-});
-export type Threshold = z.infer<typeof ThresholdSchema>;
-
-export const UpdateThresholdDtoSchema = z.object({
-  threshold: z.number().min(0).max(1),
-});
-export type UpdateThresholdDto = z.infer<typeof UpdateThresholdDtoSchema>;
 
 export const UserArticleSchema = z.object({
   id: z.string(),

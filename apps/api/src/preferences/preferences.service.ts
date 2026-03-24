@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { Category } from '@prisma/client';
 
-import type { UserPreferenceWithCategory } from './preferences.repository';
+import type { PreferencesSettings, UpdatePreferencesDto } from '@repo/types';
+
 import { PreferencesRepository } from './preferences.repository';
 
 @Injectable()
@@ -12,19 +13,11 @@ export class PreferencesService {
     return this.preferencesRepository.findAllCategories();
   }
 
-  getUserPreferences(userId: string): Promise<UserPreferenceWithCategory[]> {
-    return this.preferencesRepository.findUserPreferences(userId);
+  getSettings(userId: string): Promise<PreferencesSettings> {
+    return this.preferencesRepository.getSettings(userId);
   }
 
-  updatePreferences(userId: string, categoryIds: string[]): Promise<UserPreferenceWithCategory[]> {
-    return this.preferencesRepository.replaceUserPreferences(userId, categoryIds);
-  }
-
-  getThreshold(userId: string): Promise<{ threshold: number }> {
-    return this.preferencesRepository.getUserThreshold(userId);
-  }
-
-  updateThreshold(userId: string, threshold: number): Promise<{ threshold: number }> {
-    return this.preferencesRepository.updateUserThreshold(userId, threshold);
+  updateSettings(userId: string, dto: UpdatePreferencesDto): Promise<PreferencesSettings> {
+    return this.preferencesRepository.updateSettings(userId, dto);
   }
 }

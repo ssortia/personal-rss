@@ -144,18 +144,20 @@ export class SourcesService {
    */
   private async scoreArticlesForUser(userId: string, sourceId: string): Promise<void> {
     try {
-      const [articles, preferences] = await Promise.all([
+      const [articles, settings] = await Promise.all([
         this.articlesRepository.findBySource(sourceId),
-        this.preferencesRepository.findUserPreferences(userId),
+        this.preferencesRepository.getSettings(userId),
       ]);
-
-      const categoryNames = preferences.map((p) => p.category.name);
 
       const BATCH = 5;
       for (let i = 0; i < articles.length; i += BATCH) {
         await Promise.all(
           articles.slice(i, i + BATCH).map(async (article) => {
-            const { score, reason } = await this.scoringService.score(article, categoryNames);
+            const { score, reason } = await this.scoringService.score(
+              article,
+              settings.selectedCategories,
+              settings.interestsText,
+            );
             await this.articlesRepository.upsertUserArticle(userId, article.id, score, reason);
           }),
         );
