@@ -32,8 +32,10 @@ async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<
     if (qs) path = `${path}?${qs}`;
   }
 
+  // Content-Type ставим только для запросов с телом, иначе Fastify отвергает пустой body
+  const hasBody = fetchOptions.body !== undefined;
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...fetchOptions.headers,
   };

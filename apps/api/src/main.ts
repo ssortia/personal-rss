@@ -24,6 +24,8 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env['NEXTAUTH_URL'] ?? 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   const config = new DocumentBuilder()

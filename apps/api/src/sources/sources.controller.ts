@@ -1,0 +1,46 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { User } from '@prisma/client';
+
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AddSourceDto } from './dto/add-source.dto';
+import { SourcesService } from './sources.service';
+
+@ApiTags('sources')
+@Controller('sources')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class SourcesController {
+  constructor(private readonly sourcesService: SourcesService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Добавить RSS/Atom-источник по URL' })
+  addSource(@CurrentUser() user: User, @Body() dto: AddSourceDto) {
+    return this.sourcesService.addSource(user.id, dto.url);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Получить список источников текущего пользователя' })
+  getUserSources(@CurrentUser() user: User) {
+    return this.sourcesService.getUserSources(user.id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Удалить источник из списка пользователя' })
+  removeSource(@CurrentUser() user: User, @Param('id') sourceId: string) {
+    return this.sourcesService.removeSource(user.id, sourceId);
+  }
+}
