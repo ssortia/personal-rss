@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Category } from '@prisma/client';
-
-import type { PreferencesSettings, UpdatePreferencesDto } from '@repo/types';
+import type { PreferencesSettings, UpdatePreferencesDto } from '@repo/shared';
 
 import { PreferencesRepository } from './preferences.repository';
 

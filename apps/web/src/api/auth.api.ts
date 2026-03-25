@@ -4,7 +4,7 @@ import type {
   RegisterDto,
   ResetPasswordDto,
   Tokens,
-} from '@repo/types';
+} from '@repo/shared';
 
 import { api } from '../lib/api';
 

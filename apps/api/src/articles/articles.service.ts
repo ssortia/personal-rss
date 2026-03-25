@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-
-import type { FeedPage } from '@repo/types';
+import type { FeedPage } from '@repo/shared';
 
 import { ArticlesRepository } from './articles.repository';
 

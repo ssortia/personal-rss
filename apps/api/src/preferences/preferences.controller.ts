@@ -4,6 +4,7 @@ import type { User } from '@prisma/client';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { PreferencesService } from './preferences.service';
 

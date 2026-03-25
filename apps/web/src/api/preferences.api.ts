@@ -1,4 +1,4 @@
-import type { Category, PreferencesSettings, UpdatePreferencesDto } from '@repo/types';
+import type { Category, PreferencesSettings, UpdatePreferencesDto } from '@repo/shared';
 
 import { api } from '../lib/api';
 

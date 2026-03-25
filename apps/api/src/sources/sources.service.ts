@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SourceType } from '@prisma/client';
-import { normalizeTelegramUsername } from '@repo/types';
+import { normalizeTelegramUsername } from '@repo/shared';
 import Parser from 'rss-parser';
 
 import { ArticlesRepository } from '../articles/articles.repository';

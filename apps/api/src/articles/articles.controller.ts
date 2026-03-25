@@ -5,6 +5,7 @@ import type { User } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PreferencesRepository } from '../preferences/preferences.repository';
+
 import { ArticlesService } from './articles.service';
 import { GetFeedDto } from './dto/get-feed.dto';
 

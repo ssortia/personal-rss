@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { APP_NAME } from '@repo/types';
+import { APP_NAME } from '@repo/shared';
 
 import { ArticlesRepository } from '../articles/articles.repository';
 import { PreferencesRepository } from '../preferences/preferences.repository';

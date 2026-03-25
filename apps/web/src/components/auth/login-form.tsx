@@ -4,8 +4,8 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { LoginDto } from '@repo/types';
-import { LoginDtoSchema } from '@repo/types';
+import type { LoginDto } from '@repo/shared';
+import { LoginDtoSchema } from '@repo/shared';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';

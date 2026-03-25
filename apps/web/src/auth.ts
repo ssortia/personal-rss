@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 
-import type { Role } from '@repo/types';
+import type { Role } from '@repo/shared';
 
 import { authApi } from './api/auth.api';
 import { usersApi } from './api/users.api';

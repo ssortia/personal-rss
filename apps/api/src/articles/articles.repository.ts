@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Article } from '@prisma/client';
 import { SourceType } from '@prisma/client';
-import type { ArticleFeedItem, FeedPage } from '@repo/types';
+import type { ArticleFeedItem, FeedPage } from '@repo/shared';
 
 import { FEED_DEFAULT_LIMIT } from '../config/constants';
 import { PrismaService } from '../prisma/prisma.service';

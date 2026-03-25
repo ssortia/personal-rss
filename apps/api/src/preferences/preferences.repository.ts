@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Category } from '@prisma/client';
-import type { PreferencesSettings } from '@repo/types';
+import type { PreferencesSettings } from '@repo/shared';
 import { z } from 'zod';
 
 import { PrismaService } from '../prisma/prisma.service';

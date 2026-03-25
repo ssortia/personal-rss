@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
-import type { Role } from '@repo/types';
+import type { Role } from '@repo/shared';
 
 import type { ListUsersParams } from '../api/users.api';
 import { usersApi } from '../api/users.api';

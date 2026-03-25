@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type { Source } from '@prisma/client';
 import { SourceType } from '@prisma/client';
-import { normalizeTelegramUsername } from '@repo/types';
+import { normalizeTelegramUsername } from '@repo/shared';
 import pLimit from 'p-limit';
 
 import { ArticlesRepository } from '../articles/articles.repository';

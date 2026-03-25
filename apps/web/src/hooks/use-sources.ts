@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 
-import type { AddSourceDto, AddTelegramSourceDto, ToggleSourceDto } from '@repo/types';
+import type { AddSourceDto, AddTelegramSourceDto, ToggleSourceDto } from '@repo/shared';
 
 import { sourcesApi } from '../api/sources.api';
 import { syncApi } from '../api/sync.api';

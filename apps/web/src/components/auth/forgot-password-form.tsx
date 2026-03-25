@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { authApi } from '@/api/auth.api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ForgotPasswordDto } from '@repo/types';
-import { ForgotPasswordDtoSchema } from '@repo/types';
+import type { ForgotPasswordDto } from '@repo/shared';
+import { ForgotPasswordDtoSchema } from '@repo/shared';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
 import Link from 'next/link';
 

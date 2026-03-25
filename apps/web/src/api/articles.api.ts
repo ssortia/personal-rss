@@ -1,4 +1,4 @@
-import type { FeedPage } from '@repo/types';
+import type { FeedPage } from '@repo/shared';
 
 import { api } from '../lib/api';
 

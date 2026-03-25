@@ -1,4 +1,4 @@
-import { APP_DESCRIPTION, APP_NAME } from '@repo/types';
+import { APP_DESCRIPTION, APP_NAME } from '@repo/shared';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

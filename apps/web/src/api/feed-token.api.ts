@@ -1,4 +1,4 @@
-import type { FeedToken } from '@repo/types';
+import type { FeedToken } from '@repo/shared';
 
 import { api } from '../lib/api';
 

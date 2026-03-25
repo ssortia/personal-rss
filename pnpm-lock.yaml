@@ -76,9 +76,9 @@ importers:
       '@prisma/client':
         specifier: ^6.3.1
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
-      '@repo/types':
+      '@repo/shared':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/shared
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -137,6 +137,9 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.5
         version: 11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.14(@nestjs/common@11.1.14(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/config/eslint
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/config/typescript
@@ -209,9 +212,9 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.13
         version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@repo/types':
+      '@repo/shared':
         specifier: workspace:*
-        version: link:../../packages/types
+        version: link:../../packages/shared
       '@ssortia/shadcn-zod-bridge':
         specifier: ^0.1.0
         version: 0.1.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(tailwindcss@4.2.1)(zod@4.3.6)
@@ -261,9 +264,6 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
-      '@eslint/eslintrc':
-        specifier: ^3.2.0
-        version: 3.3.4
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/config/eslint
@@ -300,6 +300,9 @@ importers:
 
   packages/config/eslint:
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.2.0
+        version: 3.3.4
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.3
@@ -339,7 +342,7 @@ importers:
 
   packages/config/typescript: {}
 
-  packages/types:
+  packages/shared:
     dependencies:
       zod:
         specifier: ^4.3.6

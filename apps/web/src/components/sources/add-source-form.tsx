@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { isTelegramInput } from '@repo/types';
+import { isTelegramInput, normalizeTelegramUsername } from '@repo/shared';
 
 import { useAddSource, useAddTelegramSource } from '@/hooks/use-sources';
 import { SOURCE_TYPE_COLORS } from '@/lib/badge-colors';
@@ -35,7 +35,7 @@ function getInputError(value: string, type: SourceType): string | null {
     }
   }
   if (type === 'telegram') {
-    const handle = value.replace(/^(https?:\/\/)?t\.me\//, '').replace(/^@/, '');
+    const handle = normalizeTelegramUsername(value);
     if (!/^[a-zA-Z0-9_]{5,}$/.test(handle)) return 'Неверный формат канала';
   }
   return null;

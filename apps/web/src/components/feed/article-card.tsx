@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import type { ArticleFeedItem } from '@repo/types';
+import type { ArticleFeedItem } from '@repo/shared';
 import { Clock } from 'lucide-react';
 
 import { TELEGRAM_POST_PREVIEW_LENGTH } from '@/config/constants';

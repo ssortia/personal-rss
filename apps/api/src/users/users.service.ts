@@ -1,6 +1,7 @@
+import { randomBytes } from 'crypto';
+
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import type { Role, User } from '@prisma/client';
-import { randomBytes } from 'crypto';
 
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { PublicUser } from './users.repository';

@@ -1,6 +1,6 @@
 import type { DefaultSession } from 'next-auth';
 
-import type { Role } from '@repo/types';
+import type { Role } from '@repo/shared';
 
 declare module 'next-auth' {
   interface Session {

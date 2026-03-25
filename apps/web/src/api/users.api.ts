@@ -1,4 +1,4 @@
-import type { Role, User } from '@repo/types';
+import type { Role, User } from '@repo/shared';
 
 import { api } from '../lib/api';
 

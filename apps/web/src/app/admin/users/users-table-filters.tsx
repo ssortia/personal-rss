@@ -1,6 +1,6 @@
 'use client';
 
-import type { Role } from '@repo/types';
+import type { Role } from '@repo/shared';
 
 import { Input } from '../../../components/ui/input';
 

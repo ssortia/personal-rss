@@ -6,7 +6,7 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/types/package.json ./packages/types/
+COPY packages/shared/package.json ./packages/shared/
 COPY packages/config/typescript/package.json ./packages/config/typescript/
 RUN pnpm install --frozen-lockfile
 
@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @repo/types build
+RUN pnpm --filter @repo/shared build
 RUN pnpm --filter @repo/web build
 
 # ---- runner stage ----

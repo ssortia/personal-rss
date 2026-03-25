@@ -22,3 +22,13 @@ export const FeedPageSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type FeedPage = z.infer<typeof FeedPageSchema>;
+
+export const UserArticleSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  articleId: z.string(),
+  score: z.number().min(0).max(1),
+  scoreReason: z.string().nullable(),
+  createdAt: z.coerce.date(),
+});
+export type UserArticle = z.infer<typeof UserArticleSchema>;

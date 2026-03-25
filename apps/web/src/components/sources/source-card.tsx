@@ -1,6 +1,6 @@
 'use client';
 
-import type { UserSourceWithSource } from '@repo/types';
+import type { UserSourceWithSource } from '@repo/shared';
 import { AlertCircle, Clock, EllipsisVertical, Power, Trash2 } from 'lucide-react';
 
 import {

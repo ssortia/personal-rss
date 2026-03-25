@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
-import type { Role } from '@repo/types';
+import type { Role } from '@repo/shared';
 
 const RoleContext = createContext<Role | null>(null);
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { APP_NAME } from '@repo/types';
+import { APP_NAME } from '@repo/shared';
 
 import { RoleProvider } from '@/components/auth/role-provider';
 import { SignOutButton } from '@/components/auth/sign-out-button';

@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
-import type { Role, User } from '@repo/types';
+import type { Role, User } from '@repo/shared';
 
 import type { ListUsersParams } from '../../../api/users.api';
 import { SORTABLE_FIELDS } from '../../../api/users.api';

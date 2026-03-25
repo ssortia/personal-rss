@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 
-import type { UpdatePreferencesDto } from '@repo/types';
+import type { UpdatePreferencesDto } from '@repo/shared';
 
 import { preferencesApi } from '../api/preferences.api';
 
