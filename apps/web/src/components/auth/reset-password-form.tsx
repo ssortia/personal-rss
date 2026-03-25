@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { authApi } from '@/api/auth.api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ApiError } from '@/lib/api';
+import { getAuthError } from '@/lib/form-errors';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,11 +31,7 @@ export function ResetPasswordForm() {
       await authApi.resetPassword({ email, token, password: data.password });
       router.push('/login');
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
-        setServerError('Ссылка недействительна или устарела. Запросите новую.');
-      } else {
-        setServerError('Произошла ошибка. Попробуйте ещё раз.');
-      }
+      setServerError(getAuthError(err));
     }
   }
 

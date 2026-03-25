@@ -1,18 +1,14 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 import { RoleProvider } from '@/components/auth/role-provider';
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { MobileMenu } from '@/components/layout/mobile-menu';
+import { NavLinks } from '@/components/layout/nav-links';
 import { ThemeToggle } from '@/components/theme-toggle';
-
-import { auth, signOut } from '../../auth';
+import { requireSession } from '@/lib/auth-guard';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-
-  if (!session || session.error === 'RefreshAccessTokenError') {
-    redirect('/login');
-  }
+  const session = await requireSession();
 
   const isAdmin = session.user.role === 'ADMIN';
 
@@ -33,17 +29,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <Link href="/" className="text-primary text-lg font-bold tracking-tight">
                 Curio
               </Link>
-              {/* Десктопная навигация — серверный рендер, без hydration */}
+              {/* Десктопная навигация с подсветкой активного маршрута */}
               <nav className="desktop-nav">
-                {navItems.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
+                <NavLinks items={navItems} />
               </nav>
             </div>
 
@@ -52,21 +40,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <ThemeToggle />
               <div className="desktop-only">
                 <span className="text-muted-foreground text-sm">{session.user?.email}</span>
-                <form
-                  action={async () => {
-                    'use server';
-                    await signOut({ redirectTo: '/login' });
-                  }}
-                >
-                  <button
-                    type="submit"
-                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                  >
-                    Выйти
-                  </button>
-                </form>
+                <SignOutButton className="text-muted-foreground hover:text-foreground text-sm transition-colors" />
               </div>
-              <MobileMenu items={navItems} email={session.user?.email ?? ''} />
+              <MobileMenu
+                items={navItems}
+                email={session.user?.email ?? ''}
+                signOutButton={
+                  <SignOutButton className="text-muted-foreground hover:text-foreground w-full px-4 py-2 text-left text-sm transition-colors" />
+                }
+              />
             </div>
           </div>
         </header>

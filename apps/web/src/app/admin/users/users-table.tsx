@@ -6,16 +6,18 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { Role, User } from '@repo/types';
 
 import type { ListUsersParams } from '../../../api/users.api';
 import { SORTABLE_FIELDS } from '../../../api/users.api';
-import { Input } from '../../../components/ui/input';
+import { useDebounce } from '../../../hooks/use-debounce';
 import { useUsers } from '../../../hooks/use-users';
+import { formatShortDate } from '../../../lib/date';
 
 import { RoleSelect } from './role-select';
+import { UsersTableFilters } from './users-table-filters';
 
 const columnHelper = createColumnHelper<User>();
 
@@ -44,11 +46,7 @@ export function UsersTable({ currentAdminId }: UsersTableProps) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Дебаунс email-фильтра — не отправляем запрос на каждый символ
-  const [debouncedEmail, setDebouncedEmail] = useState('');
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedEmail(emailInput), 400);
-    return () => clearTimeout(id);
-  }, [emailInput]);
+  const debouncedEmail = useDebounce(emailInput, 400);
 
   // Мемоизация params — стабилизирует queryKey в useUsers
   const params = useMemo<ListUsersParams>(
@@ -101,12 +99,7 @@ export function UsersTable({ currentAdminId }: UsersTableProps) {
       }),
       columnHelper.accessor('createdAt', {
         header: 'Дата регистрации',
-        cell: (info) =>
-          new Date(info.getValue()).toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-          }),
+        cell: (info) => formatShortDate(info.getValue()),
       }),
     ],
     [currentAdminId],
@@ -123,24 +116,12 @@ export function UsersTable({ currentAdminId }: UsersTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Панель фильтров */}
-      <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Поиск по email..."
-          value={emailInput}
-          onChange={(e) => setEmailInput(e.target.value)}
-          className="max-w-xs"
-        />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as Role | '')}
-          className="border-input bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2"
-        >
-          <option value="">Все роли</option>
-          <option value="USER">USER</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
-      </div>
+      <UsersTableFilters
+        emailInput={emailInput}
+        roleFilter={roleFilter}
+        onEmailChange={setEmailInput}
+        onRoleChange={setRoleFilter}
+      />
 
       {/* Таблица */}
       <div className="overflow-hidden rounded-lg border">

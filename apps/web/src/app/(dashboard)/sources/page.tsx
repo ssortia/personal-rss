@@ -31,18 +31,7 @@ function SourcesSkeleton() {
 export default function SourcesPage() {
   const { data: userSources, isLoading, isError } = useSources();
   const [showForm, setShowForm] = useState(false);
-  const {
-    mutate: triggerSync,
-    isPending: isSyncing,
-    isSuccess: syncDone,
-    reset: resetSync,
-  } = useTriggerSync();
-
-  function handleTriggerSync() {
-    triggerSync(undefined, {
-      onSuccess: () => setTimeout(() => resetSync(), 3000),
-    });
-  }
+  const { mutate: triggerSync, isPending: isSyncing } = useTriggerSync();
 
   return (
     <div className="space-y-6">
@@ -53,8 +42,8 @@ export default function SourcesPage() {
         </div>
         {!showForm && (
           <div className="flex shrink-0 gap-2">
-            <Button variant="outline" onClick={handleTriggerSync} disabled={isSyncing}>
-              {isSyncing ? 'Обновляется...' : syncDone ? 'Запущено' : 'Обновить статьи'}
+            <Button variant="outline" onClick={() => triggerSync()} disabled={isSyncing}>
+              {isSyncing ? 'Обновляется...' : 'Обновить статьи'}
             </Button>
             <Button onClick={() => setShowForm(true)}>Добавить источник</Button>
           </div>

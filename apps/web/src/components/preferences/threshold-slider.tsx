@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 import { usePreferencesSettings, useUpdatePreferencesSettings } from '@/hooks/use-preferences';
@@ -10,13 +10,15 @@ export function ThresholdSlider() {
   const { mutate: updateSettings } = useUpdatePreferencesSettings();
 
   const [localValue, setLocalValue] = useState<number | null>(null);
+  const initialized = useRef(false);
 
-  // Инициализируем localValue из настроек — только один раз при загрузке
+  // Инициализируем localValue из настроек строго один раз при первой загрузке данных
   useEffect(() => {
-    if (settings?.relevanceThreshold !== undefined && localValue === null) {
+    if (!initialized.current && settings?.relevanceThreshold !== undefined) {
       setLocalValue(settings.relevanceThreshold);
+      initialized.current = true;
     }
-  }, [settings?.relevanceThreshold, localValue]);
+  }, [settings?.relevanceThreshold]);
 
   if (isLoading || localValue === null) {
     return <div className="bg-muted h-5 w-full animate-pulse rounded" />;

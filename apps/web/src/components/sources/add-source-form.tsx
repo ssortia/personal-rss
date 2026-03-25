@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 
-import { getAddSourceError, useAddSource, useAddTelegramSource } from '@/hooks/use-sources';
-import { ApiError } from '@/lib/api';
+import { useAddSource, useAddTelegramSource } from '@/hooks/use-sources';
+import { SOURCE_TYPE_COLORS } from '@/lib/badge-colors';
+import { getSourceError } from '@/lib/form-errors';
 
 interface AddSourceFormProps {
   onSuccess?: () => void;
@@ -31,10 +32,21 @@ const TYPE_LABELS: Record<SourceType, string> = {
   telegram: 'Telegram',
 };
 
-const TYPE_COLORS: Record<SourceType, string> = {
-  rss: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  telegram: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-};
+/** Клиентская валидация ввода для мгновенной обратной связи. */
+function getInputError(value: string, type: SourceType): string | null {
+  if (type === 'rss') {
+    try {
+      new URL(value);
+    } catch {
+      return 'Введите корректный URL';
+    }
+  }
+  if (type === 'telegram') {
+    const handle = value.replace(/^(https?:\/\/)?t\.me\//, '').replace(/^@/, '');
+    if (!/^[a-zA-Z0-9_]{5,}$/.test(handle)) return 'Неверный формат канала';
+  }
+  return null;
+}
 
 export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
   const { mutateAsync: addRss, isPending: isRssPending } = useAddSource();
@@ -44,11 +56,13 @@ export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
 
   const isPending = isRssPending || isTelegramPending;
   const detectedType = detectType(value);
+  const trimmed = value.trim();
+  // Показываем клиентскую ошибку только если поле непустое
+  const inputError = trimmed ? getInputError(trimmed, detectedType) : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || inputError) return;
 
     setError(null);
     try {
@@ -59,13 +73,11 @@ export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
       }
       onSuccess?.();
     } catch (err) {
-      if (detectedType === 'telegram') {
-        setError(getTelegramError(err));
-      } else {
-        setError(getAddSourceError(err));
-      }
+      setError(getSourceError(err));
     }
   }
+
+  const displayError = error ?? inputError;
 
   return (
     <div className="bg-card border-border rounded-xl border p-5">
@@ -92,9 +104,9 @@ export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
               className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-50"
               autoFocus
             />
-            {value.trim() && (
+            {trimmed && (
               <span
-                className={`mr-2 shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${TYPE_COLORS[detectedType]}`}
+                className={`mr-2 shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${SOURCE_TYPE_COLORS[detectedType]}`}
               >
                 {TYPE_LABELS[detectedType]}
               </span>
@@ -103,7 +115,7 @@ export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
 
           <button
             type="submit"
-            disabled={isPending || !value.trim()}
+            disabled={isPending || !trimmed || !!inputError}
             className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {isPending ? 'Добавление...' : 'Добавить'}
@@ -121,16 +133,8 @@ export function AddSourceForm({ onSuccess, onCancel }: AddSourceFormProps) {
           )}
         </div>
 
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {displayError && <p className="text-destructive text-sm">{displayError}</p>}
       </form>
     </div>
   );
-}
-
-function getTelegramError(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 409) return 'Источник уже добавлен';
-    if (error.status === 400) return 'Канал не найден или приватный';
-  }
-  return 'Произошла ошибка. Попробуйте ещё раз.';
 }

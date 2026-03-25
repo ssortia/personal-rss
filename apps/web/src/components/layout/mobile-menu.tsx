@@ -12,9 +12,11 @@ interface NavItem {
 interface MobileMenuProps {
   items: NavItem[];
   email: string;
+  /** Кнопка выхода из аккаунта — server component, передаётся из layout. */
+  signOutButton?: React.ReactNode;
 }
 
-export function MobileMenu({ items, email }: MobileMenuProps) {
+export function MobileMenu({ items, email, signOutButton }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -65,6 +67,12 @@ export function MobileMenu({ items, email }: MobileMenuProps) {
             ))}
             <div className="border-border mx-4 my-2 border-t" />
             <p className="text-muted-foreground px-4 py-1 text-xs">{email}</p>
+            {signOutButton && (
+              <>
+                <div className="border-border mx-4 my-1 border-t" />
+                {signOutButton}
+              </>
+            )}
           </div>
         </>
       )}

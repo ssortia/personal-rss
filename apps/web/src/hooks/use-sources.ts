@@ -2,12 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 import type { AddSourceDto, AddTelegramSourceDto, ToggleSourceDto } from '@repo/types';
 
 import { sourcesApi } from '../api/sources.api';
 import { syncApi } from '../api/sync.api';
-import { ApiError } from '../lib/api';
 
 /** Хук для получения списка источников текущего пользователя. */
 export function useSources() {
@@ -25,7 +25,11 @@ export function useAddSource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AddSourceDto) => sourcesApi.add(data, session!.accessToken!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sources'] });
+      toast.success('Источник добавлен');
+    },
+    onError: () => toast.error('Не удалось добавить источник'),
   });
 }
 
@@ -35,7 +39,11 @@ export function useAddTelegramSource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: AddTelegramSourceDto) => sourcesApi.addTelegram(data, session!.accessToken!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sources'] });
+      toast.success('Telegram-канал добавлен');
+    },
+    onError: () => toast.error('Не удалось добавить канал'),
   });
 }
 
@@ -46,7 +54,10 @@ export function useToggleSource() {
   return useMutation({
     mutationFn: ({ sourceId, ...data }: ToggleSourceDto & { sourceId: string }) =>
       sourcesApi.toggle(sourceId, data, session!.accessToken!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+    onSuccess: (_, { isActive }) => {
+      void queryClient.invalidateQueries({ queryKey: ['sources'] });
+      toast.success(isActive ? 'Источник включён' : 'Источник отключён');
+    },
   });
 }
 
@@ -56,7 +67,10 @@ export function useDeleteSource() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (sourceId: string) => sourcesApi.delete(sourceId, session!.accessToken!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sources'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['sources'] });
+      toast.success('Источник удалён');
+    },
   });
 }
 
@@ -65,14 +79,7 @@ export function useTriggerSync() {
   const { data: session } = useSession();
   return useMutation({
     mutationFn: () => syncApi.trigger(session!.accessToken!),
+    onSuccess: () => toast.success('Обновление запущено'),
+    onError: () => toast.error('Не удалось запустить обновление'),
   });
-}
-
-/** Преобразует ошибку API в читаемое сообщение для формы добавления источника. */
-export function getAddSourceError(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 409) return 'Источник уже добавлен';
-    if (error.status === 400) return 'Недоступная или невалидная RSS-лента';
-  }
-  return 'Произошла ошибка. Попробуйте ещё раз.';
 }

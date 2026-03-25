@@ -1,24 +1,15 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 import { RoleProvider } from '@/components/auth/role-provider';
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { NavLinks } from '@/components/layout/nav-links';
 import { ThemeToggle } from '@/components/theme-toggle';
-
-import { auth, signOut } from '../../auth';
+import { requireAdminSession } from '@/lib/auth-guard';
 
 const adminNavItems = [{ href: '/admin/users', label: 'Пользователи' }];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-
-  if (!session || session.error === 'RefreshAccessTokenError') {
-    redirect('/login');
-  }
-
-  if (session.user.role !== 'ADMIN') {
-    redirect('/');
-  }
+  const session = await requireAdminSession();
 
   return (
     <RoleProvider role={session.user.role}>
@@ -39,19 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <span className="text-muted-foreground desktop-inline text-sm">
                 {session.user?.email}
               </span>
-              <form
-                action={async () => {
-                  'use server';
-                  await signOut({ redirectTo: '/login' });
-                }}
-              >
-                <button
-                  type="submit"
-                  className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                >
-                  Выйти
-                </button>
-              </form>
+              <SignOutButton className="text-muted-foreground hover:text-foreground text-sm transition-colors" />
             </div>
           </div>
         </header>

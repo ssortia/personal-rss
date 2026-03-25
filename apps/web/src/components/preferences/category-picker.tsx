@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useCategories,
@@ -11,6 +13,12 @@ export function CategoryPicker() {
   const { data: categories, isLoading: loadingCategories, isError } = useCategories();
   const { data: settings, isLoading: loadingSettings } = usePreferencesSettings();
   const { mutate: updateSettings, isPending } = useUpdatePreferencesSettings();
+
+  // useMemo должен быть до ранних возвратов — правила хуков
+  const selectedSlugs = useMemo(
+    () => new Set(settings?.selectedCategories ?? []),
+    [settings?.selectedCategories],
+  );
 
   if (loadingCategories || loadingSettings) {
     return (
@@ -25,8 +33,6 @@ export function CategoryPicker() {
   if (isError) {
     return <p className="text-muted-foreground text-sm">Не удалось загрузить категории</p>;
   }
-
-  const selectedSlugs = new Set(settings?.selectedCategories ?? []);
 
   function toggle(slug: string) {
     const next = new Set(selectedSlugs);

@@ -3,17 +3,8 @@
 import { useEffect, useState } from 'react';
 
 import { Textarea } from '@/components/ui/textarea';
+import { useDebounce } from '@/hooks/use-debounce';
 import { usePreferencesSettings, useUpdatePreferencesSettings } from '@/hooks/use-preferences';
-
-/** Debounce-хелпер для текстового поля. */
-function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 
 export function InterestsTextInput() {
   const { data: settings, isLoading } = usePreferencesSettings();

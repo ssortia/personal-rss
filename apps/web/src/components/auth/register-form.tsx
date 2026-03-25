@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { authApi } from '@/api/auth.api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ApiError } from '@/lib/api';
+import { getAuthError } from '@/lib/form-errors';
 import type { RegisterDto } from '@repo/types';
 import { RegisterDtoSchema } from '@repo/types';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
@@ -23,11 +23,7 @@ export function RegisterForm() {
     try {
       await authApi.register({ email: data.email, password: data.password });
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
-        setServerError('Пользователь с таким email уже существует');
-      } else {
-        setServerError('Ошибка регистрации');
-      }
+      setServerError(getAuthError(err));
       return;
     }
 

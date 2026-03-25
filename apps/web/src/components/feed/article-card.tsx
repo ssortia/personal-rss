@@ -5,32 +5,18 @@ import { useState } from 'react';
 import type { ArticleFeedItem } from '@repo/types';
 import { Clock } from 'lucide-react';
 
+import { getScoreColor } from '@/lib/badge-colors';
+import { formatArticleDate } from '@/lib/date';
+
 interface Props {
   article: ArticleFeedItem;
-}
-
-function formatDate(date: Date | null): string {
-  if (!date) return '';
-  return new Date(date).toLocaleString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) return null;
 
-  const colorClass =
-    score >= 0.7
-      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      : score >= 0.4
-        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-        : 'bg-muted text-muted-foreground';
-
   return (
-    <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${colorClass}`}>
+    <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${getScoreColor(score)}`}>
       {score.toFixed(2)}
     </span>
   );
@@ -111,7 +97,7 @@ export function ArticleCard({ article }: Props) {
         {article.publishedAt && (
           <div className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
-            <span>{formatDate(article.publishedAt)}</span>
+            <span>{formatArticleDate(article.publishedAt)}</span>
           </div>
         )}
         <ScoreBadge score={article.score} />

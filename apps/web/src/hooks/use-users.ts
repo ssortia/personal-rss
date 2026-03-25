@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 
 import type { Role } from '@repo/types';
 
@@ -27,6 +28,10 @@ export function useUpdateRole() {
     mutationFn: ({ userId, role }: { userId: string; role: Role }) =>
       usersApi.updateRole(userId, role, session!.accessToken!),
     // Инвалидируем все запросы users (независимо от параметров)
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Роль обновлена');
+    },
+    onError: () => toast.error('Не удалось изменить роль'),
   });
 }
