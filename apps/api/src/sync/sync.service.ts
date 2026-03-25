@@ -1,4 +1,5 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import type { Source } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 import { normalizeTelegramUsername } from '@repo/shared';
@@ -25,7 +26,7 @@ async function retry<T>(fn: () => Promise<T>, attempts: number): Promise<T> {
 }
 
 @Injectable()
-export class SyncService implements OnModuleInit {
+export class SyncService {
   private readonly logger = new Logger(SyncService.name);
 
   /**
@@ -41,12 +42,6 @@ export class SyncService implements OnModuleInit {
     private readonly articlesRepository: ArticlesRepository,
     private readonly telegramGate: TelegramGate,
   ) {}
-
-  onModuleInit(): void {
-    const intervalMs = getEnv().FEED_SYNC_INTERVAL_MIN * 60 * 1000;
-    setInterval(() => void this.syncAllSources(), intervalMs);
-    this.logger.log(`Планировщик запущен: каждые ${getEnv().FEED_SYNC_INTERVAL_MIN} мин.`);
-  }
 
   /**
    * Запускает обход активных источников конкретного пользователя и оценку статей только для него.
@@ -64,7 +59,8 @@ export class SyncService implements OnModuleInit {
             await this.fetchAndSaveArticles(source);
             await this.articlesScoringService.scoreForUser(userId, source.id, source.type);
           } catch (err) {
-            await this.sourcesRepository.updateLastError(source.id, (err as Error).message);
+            const message = err instanceof Error ? err.message : String(err);
+            await this.sourcesRepository.updateLastError(source.id, message);
             this.logger.warn(`[${source.url}] ошибка при синхронизации: ${String(err)}`);
           }
         }),
@@ -72,13 +68,28 @@ export class SyncService implements OnModuleInit {
     );
   }
 
-  /** Запускает обход всех активных источников (не более 5 параллельно). */
+  /**
+   * @Cron вместо setInterval: не запускает следующий цикл пока не завершился предыдущий,
+   * интегрируется с NestJS lifecycle и логированием.
+   */
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async syncAllSources(): Promise<void> {
     if (this.isRunning) {
       this.logger.warn('Синхронизация уже идёт, пропускаем запуск');
       return;
     }
     this.isRunning = true;
+
+    /**
+     * Таймаут-страховка на случай зависшего await внутри синхронизации.
+     * При переходе на Redis lock этот таймаут можно убрать.
+     */
+    const syncTimeoutMs = (getEnv().FEED_SYNC_INTERVAL_MIN - 5) * 60 * 1000;
+    const timeout = setTimeout(() => {
+      this.logger.error('Синхронизация превысила таймаут, принудительно сбрасываем флаг');
+      this.isRunning = false;
+    }, syncTimeoutMs);
+
     try {
       const sources = await this.sourcesRepository.findActiveSources();
       this.logger.log(`Синхронизация: ${sources.length} источников`);
@@ -94,6 +105,7 @@ export class SyncService implements OnModuleInit {
         ),
       );
     } finally {
+      clearTimeout(timeout);
       this.isRunning = false;
     }
   }
@@ -121,7 +133,9 @@ export class SyncService implements OnModuleInit {
         ),
       );
     } catch (err) {
-      await this.sourcesRepository.updateLastError(source.id, (err as Error).message);
+      // Корректное извлечение сообщения для любого типа ошибки
+      const message = err instanceof Error ? err.message : String(err);
+      await this.sourcesRepository.updateLastError(source.id, message);
       throw err; // re-throw — внешний .catch() в syncAllSources только логирует
     }
   }
@@ -138,7 +152,14 @@ export class SyncService implements OnModuleInit {
 
   private async fetchRss(source: Source): Promise<void> {
     const Parser = (await import('rss-parser')).default;
-    const parser = new Parser({ timeout: 10000 });
+    // Явный User-Agent и Accept — некоторые сайты блокируют ботовые/пустые UA
+    const parser = new Parser({
+      timeout: 10_000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CurioBot/1.0; +https://curio.app)',
+        Accept: 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+      },
+    });
     const feed = await parser.parseURL(source.url);
     await this.articlesRepository.upsertMany(source.id, mapRssFeedItems(feed.items));
   }

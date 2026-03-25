@@ -79,6 +79,14 @@ export class TelegramGate {
       posts.push({ guid: dataPost, title, url: postUrl, content, publishedAt });
     });
 
+    // Если страница загрузилась, но посты не найдены — возможно изменилась вёрстка виджета
+    if (posts.length === 0 && $('body').length > 0) {
+      this.logger.warn(
+        { channelUrl: url },
+        'Telegram: посты не найдены, возможно изменилась структура виджета',
+      );
+    }
+
     return { title, description, imageUrl, posts };
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Article } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 import type { ArticleFeedItem, FeedPage } from '@repo/shared';
@@ -30,22 +30,30 @@ function decodeCursor(raw: string): FeedCursor {
 
 @Injectable()
 export class ArticlesRepository {
+  private readonly logger = new Logger(ArticlesRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /** Сохраняет статьи из любого источника, пропуская уже существующие (по sourceId + guid). */
   async upsertMany(sourceId: string, articles: RawArticle[]): Promise<void> {
-    const data = articles
-      .filter((a) => a.title && a.guid) // пропускаем статьи без заголовка или идентификатора
-      .map((a) => ({
-        sourceId,
-        guid: a.guid,
-        title: a.title,
-        url: a.url,
-        content: a.content ?? null,
-        publishedAt: a.publishedAt ?? null,
-      }));
+    const valid = articles.filter((a) => a.title && a.guid);
+    const skipped = articles.length - valid.length;
 
-    if (data.length === 0) return;
+    // Логируем пропущенные статьи для диагностики источников
+    if (skipped > 0) {
+      this.logger.warn({ sourceId, skipped }, 'Пропущены статьи без title или guid');
+    }
+
+    if (valid.length === 0) return;
+
+    const data = valid.map((a) => ({
+      sourceId,
+      guid: a.guid,
+      title: a.title,
+      url: a.url,
+      content: a.content ?? null,
+      publishedAt: a.publishedAt ?? null,
+    }));
 
     await this.prisma.article.createMany({ data, skipDuplicates: true });
   }
@@ -75,6 +83,10 @@ export class ArticlesRepository {
    * Возвращает страницу фида для пользователя.
    * Включает статьи из активных источников с оценкой >= threshold или ещё не оценённые.
    * Порядок: publishedAt DESC NULLS LAST, id DESC. Cursor-based пагинация.
+   *
+   * TODO (проблема 6): применяется только глобальный threshold.
+   * Per-source threshold требует JOIN с user_preferences по sourceId,
+   * что в Prisma реализуется только через $queryRaw.
    */
   async getFeed(
     userId: string,
@@ -183,6 +195,34 @@ export class ArticlesRepository {
         data: { summary: aiContent },
       });
     }
+  }
+
+  /**
+   * Batch-вариант updateAiContent — один транзакционный вызов вместо N.
+   * Все обновления выполняются атомарно внутри одной транзакции.
+   */
+  async updateAiContentBatch(
+    updates: Array<{ articleId: string; sourceType: SourceType; aiContent: string }>,
+  ): Promise<void> {
+    if (updates.length === 0) return;
+
+    const summaryUpdates = updates.filter((u) => u.sourceType !== SourceType.TELEGRAM);
+    const titleUpdates = updates.filter((u) => u.sourceType === SourceType.TELEGRAM);
+
+    await this.prisma.$transaction([
+      ...summaryUpdates.map((u) =>
+        this.prisma.article.updateMany({
+          where: { id: u.articleId, summary: null },
+          data: { summary: u.aiContent },
+        }),
+      ),
+      ...titleUpdates.map((u) =>
+        this.prisma.article.updateMany({
+          where: { id: u.articleId, aiTitle: null },
+          data: { aiTitle: u.aiContent },
+        }),
+      ),
+    ]);
   }
 
   /** Сохраняет или обновляет персональную оценку статьи для пользователя. */

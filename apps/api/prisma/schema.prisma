@@ -146,5 +146,6 @@ model UserArticle {
 
   @@unique([userId, articleId])
   @@index([userId, score])
+  @@index([articleId, userId]) // ускоряет NOT EXISTS в findUnscoredBySource
   @@map("user_articles")
 }

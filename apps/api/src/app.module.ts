@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
@@ -26,6 +27,7 @@ const pinoHttpConfig = {
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     // 20 запросов в минуту по умолчанию; auth-эндпоинты ужесточены до 5 через @Throttle()
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
     LoggerModule.forRoot({ pinoHttp: pinoHttpConfig }),
