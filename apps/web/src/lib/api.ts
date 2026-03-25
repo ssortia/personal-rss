@@ -50,11 +50,27 @@ async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<
     throw new ApiError(res.status, error || `HTTP ${res.status}`);
   }
 
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
   return res.json() as Promise<T>;
+}
+
+/** Вариант apiFetch для операций без тела ответа (DELETE, 204 No Content). */
+async function apiFetchVoid(path: string, options: RequestOptions = {}): Promise<void> {
+  const { accessToken, ...fetchOptions } = options;
+
+  const headers: HeadersInit = {
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    ...fetchOptions.headers,
+  };
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...fetchOptions,
+    headers,
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new ApiError(res.status, error || `HTTP ${res.status}`);
+  }
 }
 
 export const api = {
@@ -66,6 +82,9 @@ export const api = {
     apiFetch<T>(path, { ...options, method: 'PUT', body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown, options?: RequestOptions) =>
     apiFetch<T>(path, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(path: string, options?: RequestOptions) =>
-    apiFetch<T>(path, { ...options, method: 'DELETE' }),
+  /** Для запросов с телом ответа — используйте api.patch(). */
+  patchVoid: (path: string, body: unknown, options?: RequestOptions) =>
+    apiFetchVoid(path, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  delete: (path: string, options?: RequestOptions) =>
+    apiFetchVoid(path, { ...options, method: 'DELETE' }),
 };

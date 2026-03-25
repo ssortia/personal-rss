@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { APP_NAME } from '@repo/types';
+
 import { RoleProvider } from '@/components/auth/role-provider';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { NavLinks } from '@/components/layout/nav-links';
@@ -18,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="container mx-auto flex h-14 items-center justify-between px-4">
             <div className="flex items-center gap-6">
               <Link href="/" className="text-primary text-lg font-bold tracking-tight">
-                Curio
+                {APP_NAME}
               </Link>
               <span className="text-muted-foreground text-sm">Админ</span>
               <nav className="flex items-center gap-6">

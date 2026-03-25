@@ -6,12 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { SourceType } from '@prisma/client';
+import { normalizeTelegramUsername } from '@repo/types';
 import Parser from 'rss-parser';
 
 import { ArticlesRepository } from '../articles/articles.repository';
-import { getEnv } from '../config/env';
-import { PreferencesRepository } from '../preferences/preferences.repository';
-import { ScoringService } from '../scoring/scoring.service';
+import { ArticlesScoringService } from '../scoring/articles-scoring.service';
 import { TelegramGate } from '../telegram/telegram.gate';
 
 import { mapRssFeedItems } from './rss-mapper';
@@ -25,8 +24,7 @@ export class SourcesService {
   constructor(
     private readonly sourcesRepository: SourcesRepository,
     private readonly articlesRepository: ArticlesRepository,
-    private readonly preferencesRepository: PreferencesRepository,
-    private readonly scoringService: ScoringService,
+    private readonly articlesScoringService: ArticlesScoringService,
     private readonly telegramGate: TelegramGate,
   ) {}
 
@@ -67,7 +65,11 @@ export class SourcesService {
     void Promise.all([
       this.articlesRepository.upsertMany(source.id, articles),
       this.sourcesRepository.updateLastFetchAt(source.id),
-    ]).then(() => this.scoreArticlesForUser(userId, source.id, SourceType.RSS));
+    ])
+      .then(() => this.articlesScoringService.scoreForUser(userId, source.id, SourceType.RSS))
+      .catch((err: unknown) =>
+        this.logger.error({ err, sourceUrl: source.url }, 'Ошибка первичного импорта RSS'),
+      );
 
     return this.sourcesRepository.findUserSources(userId);
   }
@@ -77,7 +79,7 @@ export class SourcesService {
    * Принимает username в любом формате: @channel, t.me/channel, https://t.me/channel.
    */
   async addTelegramChannel(userId: string, rawUsername: string): Promise<UserSourceWithSource[]> {
-    const username = this.normalizeTelegramUsername(rawUsername);
+    const username = normalizeTelegramUsername(rawUsername);
 
     const channel = await this.telegramGate.fetchChannel(username);
     if (!channel) {
@@ -108,7 +110,7 @@ export class SourcesService {
       this.articlesRepository.upsertMany(source.id, channel.posts),
       this.sourcesRepository.updateLastFetchAt(source.id),
     ])
-      .then(() => this.scoreArticlesForUser(userId, source.id, SourceType.TELEGRAM))
+      .then(() => this.articlesScoringService.scoreForUser(userId, source.id, SourceType.TELEGRAM))
       .catch((err: unknown) =>
         this.logger.error(`Ошибка импорта постов Telegram @${username}: ${String(err)}`),
       );
@@ -133,63 +135,6 @@ export class SourcesService {
   }
 
   /**
-   * Оценивает статьи источника для пользователя батчами через scoreBatch (1 запрос = N статей).
-   * Обрабатывает только статьи без существующей оценки (UserArticle).
-   * Между батчами выдерживает задержку GROQ_BATCH_DELAY_MS для соблюдения 30 RPM лимита.
-   * Запускается асинхронно — ошибки не прерывают основной флоу.
-   */
-  async scoreArticlesForUser(
-    userId: string,
-    sourceId: string,
-    sourceType: SourceType,
-  ): Promise<void> {
-    try {
-      const [articles, settings] = await Promise.all([
-        this.articlesRepository.findUnscoredBySource(userId, sourceId),
-        this.preferencesRepository.getSettings(userId),
-      ]);
-
-      const { GROQ_BATCH_SIZE, GROQ_BATCH_DELAY_MS } = getEnv();
-
-      for (let i = 0; i < articles.length; i += GROQ_BATCH_SIZE) {
-        const batch = articles.slice(i, i + GROQ_BATCH_SIZE);
-        const results = await this.scoringService.scoreBatch(
-          batch.map((a) => ({ ...a, sourceType })),
-          settings.selectedCategories,
-          settings.interestsText,
-        );
-
-        await Promise.all(
-          batch.map(async (article, j) => {
-            const result = results[j]!;
-            await this.articlesRepository.upsertUserArticle(
-              userId,
-              article.id,
-              result.score,
-              result.reason,
-            );
-            // Сохраняем AI-контент в Article (один раз для всех пользователей)
-            if (result.aiContent) {
-              await this.articlesRepository.updateAiContent(
-                article.id,
-                sourceType,
-                result.aiContent,
-              );
-            }
-          }),
-        );
-
-        // Задержка между батчами, кроме последнего
-        if (i + GROQ_BATCH_SIZE < articles.length) {
-          await new Promise((r) => setTimeout(r, GROQ_BATCH_DELAY_MS));
-        }
-      }
-    } catch (err) {
-      this.logger.error(`Ошибка AI-оценки статей для userId=${userId}: ${String(err)}`);
-    }
-  }
-
-  /**
    * Удаляет источник из списка пользователя.
    * Статьи из фида исчезнут автоматически, так как привязаны к источнику.
    */
@@ -199,14 +144,5 @@ export class SourcesService {
       throw new NotFoundException('Источник не найден');
     }
     await this.sourcesRepository.deleteUserSource(userId, sourceId);
-  }
-
-  /** Приводит username к чистому виду без @, https://t.me/ и пробелов. */
-  private normalizeTelegramUsername(raw: string): string {
-    return raw
-      .trim()
-      .replace(/^https?:\/\//i, '')
-      .replace(/^t\.me\//i, '')
-      .replace(/^@/, '');
   }
 }

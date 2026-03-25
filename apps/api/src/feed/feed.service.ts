@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { APP_NAME } from '@repo/types';
 
 import { ArticlesRepository } from '../articles/articles.repository';
 import { PreferencesRepository } from '../preferences/preferences.repository';
@@ -56,7 +57,7 @@ export class FeedService {
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<rss version="2.0">',
       '  <channel>',
-      `    <title><![CDATA[Curio — персональный фид ${user.email}]]></title>`,
+      `    <title><![CDATA[${APP_NAME} — персональный фид ${user.email}]]></title>`,
       '    <description>Персональные новости с AI-фильтрацией</description>',
       itemsXml,
       '  </channel>',

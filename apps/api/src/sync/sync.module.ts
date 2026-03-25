@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ArticlesModule } from '../articles/articles.module';
+import { ScoringModule } from '../scoring/scoring.module';
 import { SourcesModule } from '../sources/sources.module';
 import { TelegramModule } from '../telegram/telegram.module';
 
@@ -8,7 +9,7 @@ import { SyncController } from './sync.controller';
 import { SyncService } from './sync.service';
 
 @Module({
-  imports: [SourcesModule, ArticlesModule, TelegramModule],
+  imports: [SourcesModule, ArticlesModule, ScoringModule, TelegramModule],
   controllers: [SyncController],
   providers: [SyncService],
 })

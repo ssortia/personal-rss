@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { APP_NAME } from '@repo/types';
+
 import { RoleProvider } from '@/components/auth/role-provider';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { MobileMenu } from '@/components/layout/mobile-menu';
@@ -27,7 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {/* Лого + десктопная навигация */}
             <div className="flex items-center gap-6">
               <Link href="/" className="text-primary text-lg font-bold tracking-tight">
-                Curio
+                {APP_NAME}
               </Link>
               {/* Десктопная навигация с подсветкой активного маршрута */}
               <nav className="desktop-nav">

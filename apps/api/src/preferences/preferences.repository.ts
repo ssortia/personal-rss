@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Category } from '@prisma/client';
-
 import type { PreferencesSettings } from '@repo/types';
+import { z } from 'zod';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -97,17 +97,17 @@ export class PreferencesRepository {
     await this.prisma.userPreferences.deleteMany({ where: { userId, sourceId } });
   }
 
+  /** Схема для частичного парсинга настроек из JSON без дефолтов (чтобы undefined ≠ отсутствие). */
+  private static readonly rawSettingsSchema = z.object({
+    relevanceThreshold: z.number().min(0).max(1).optional(),
+    interestsText: z.string().max(2000).nullable().optional(),
+    selectedCategories: z.array(z.string()).optional(),
+  });
+
   private parseSettings(raw: unknown): Partial<PreferencesSettings> {
     if (!raw || typeof raw !== 'object') return {};
-    const s = raw as Record<string, unknown>;
-    const result: Partial<PreferencesSettings> = {};
-    if (typeof s['relevanceThreshold'] === 'number')
-      result.relevanceThreshold = s['relevanceThreshold'];
-    if (s['interestsText'] === null || typeof s['interestsText'] === 'string')
-      result.interestsText = s['interestsText'] as string | null;
-    if (Array.isArray(s['selectedCategories']))
-      result.selectedCategories = s['selectedCategories'] as string[];
-    return result;
+    const result = PreferencesRepository.rawSettingsSchema.safeParse(raw);
+    return result.success ? result.data : {};
   }
 
   private mergeWithDefaults(settings: Partial<PreferencesSettings>): PreferencesSettings {

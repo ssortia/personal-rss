@@ -13,11 +13,13 @@ export function useFeed() {
 
   return useInfiniteQuery({
     queryKey: ['feed'],
-    queryFn: ({ pageParam }) =>
-      articlesApi.getFeed(
+    queryFn: ({ pageParam }) => {
+      if (!session?.accessToken) throw new Error('Access token is missing');
+      return articlesApi.getFeed(
         { cursor: pageParam as string | undefined, limit: LIMIT },
-        session!.accessToken!,
-      ),
+        session.accessToken,
+      );
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!session?.accessToken,

@@ -15,10 +15,10 @@ export const sourcesApi = {
   list: (accessToken: string) => api.get<UserSourceWithSource[]>('/sources', { accessToken }),
 
   toggle: (sourceId: string, data: ToggleSourceDto, accessToken: string) =>
-    api.patch<void>(`/sources/${sourceId}/toggle`, data, { accessToken }),
+    api.patchVoid(`/sources/${sourceId}/toggle`, data, { accessToken }),
 
   delete: (sourceId: string, accessToken: string) =>
-    api.delete<void>(`/sources/${sourceId}`, { accessToken }),
+    api.delete(`/sources/${sourceId}`, { accessToken }),
 
   addTelegram: (data: AddTelegramSourceDto, accessToken: string) =>
     api.post<UserSourceWithSource[]>('/sources/telegram', data, { accessToken }),

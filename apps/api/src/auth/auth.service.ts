@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
+import { RESET_TOKEN_TTL_MS } from '../config/constants';
 import { getEnv } from '../config/env';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
@@ -78,7 +79,7 @@ export class AuthService {
 
     const token = randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(token, 10);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 час
+    const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
 
     await this.usersService.setResetToken(user.id, hashedToken, expiresAt);
     await this.mailService.sendPasswordReset(email, token);

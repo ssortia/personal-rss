@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { ArticleFeedItem } from '@repo/types';
 import { Clock } from 'lucide-react';
 
+import { TELEGRAM_POST_PREVIEW_LENGTH } from '@/config/constants';
 import { getScoreColor } from '@/lib/badge-colors';
 import { formatArticleDate } from '@/lib/date';
 
@@ -31,8 +32,9 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
 /** Контент Telegram-поста с кнопкой «Показать полностью». */
 function TelegramContent({ content }: { content: string }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = content.length > 300;
-  const visible = expanded || !isLong ? content : content.slice(0, 300) + '…';
+  const isLong = content.length > TELEGRAM_POST_PREVIEW_LENGTH;
+  const visible =
+    expanded || !isLong ? content : content.slice(0, TELEGRAM_POST_PREVIEW_LENGTH) + '…';
 
   return (
     <div className="space-y-1.5">

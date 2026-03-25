@@ -3,15 +3,11 @@ import Groq, { RateLimitError } from 'groq-sdk';
 
 import { getEnv } from '../config/env';
 
-export interface GroqMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
+import type { AiChatOptions, AiGateway, AiMessage } from './ai-gateway.interface';
 
-export interface GroqChatOptions {
+export interface GroqChatOptions extends AiChatOptions {
   model?: string;
   temperature?: number;
-  maxTokens?: number;
 }
 
 /**
@@ -20,7 +16,7 @@ export interface GroqChatOptions {
  * обработать сетевые/rate-limit ошибки. Никакой бизнес-логики.
  */
 @Injectable()
-export class GroqGate {
+export class GroqGate implements AiGateway {
   private readonly logger = new Logger(GroqGate.name);
   private readonly client: Groq | null;
 
@@ -38,7 +34,7 @@ export class GroqGate {
    * При 429 ждёт указанное в ответе время и повторяет один раз.
    * При любой другой ошибке возвращает null.
    */
-  async chat(messages: GroqMessage[], options: GroqChatOptions = {}): Promise<string | null> {
+  async chat(messages: AiMessage[], options: GroqChatOptions = {}): Promise<string | null> {
     if (!this.client) return null;
 
     try {
@@ -60,7 +56,7 @@ export class GroqGate {
     }
   }
 
-  private async doRequest(messages: GroqMessage[], options: GroqChatOptions): Promise<string> {
+  private async doRequest(messages: AiMessage[], options: GroqChatOptions): Promise<string> {
     const response = await this.client!.chat.completions.create({
       model: options.model ?? 'llama-3.3-70b-versatile',
       messages,

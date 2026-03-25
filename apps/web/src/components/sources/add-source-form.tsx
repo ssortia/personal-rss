@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { isTelegramInput } from '@repo/types';
+
 import { useAddSource, useAddTelegramSource } from '@/hooks/use-sources';
 import { SOURCE_TYPE_COLORS } from '@/lib/badge-colors';
 import { getSourceError } from '@/lib/form-errors';
@@ -15,16 +17,7 @@ type SourceType = 'rss' | 'telegram';
 
 /** Определяет тип источника по введённому значению. */
 function detectType(value: string): SourceType {
-  const v = value.trim().toLowerCase();
-  if (
-    v.startsWith('@') ||
-    v.startsWith('t.me/') ||
-    v.startsWith('https://t.me/') ||
-    v.startsWith('http://t.me/')
-  ) {
-    return 'telegram';
-  }
-  return 'rss';
+  return isTelegramInput(value) ? 'telegram' : 'rss';
 }
 
 const TYPE_LABELS: Record<SourceType, string> = {

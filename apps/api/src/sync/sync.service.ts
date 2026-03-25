@@ -1,13 +1,14 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import type { Source } from '@prisma/client';
 import { SourceType } from '@prisma/client';
+import { normalizeTelegramUsername } from '@repo/types';
 import pLimit from 'p-limit';
 
 import { ArticlesRepository } from '../articles/articles.repository';
 import { getEnv } from '../config/env';
+import { ArticlesScoringService } from '../scoring/articles-scoring.service';
 import { mapRssFeedItems } from '../sources/rss-mapper';
 import { SourcesRepository } from '../sources/sources.repository';
-import { SourcesService } from '../sources/sources.service';
 import { TelegramGate } from '../telegram/telegram.gate';
 
 /** Повторяет вызов fn до attempts раз с экспоненциальной задержкой (1s, 2s...). */
@@ -36,7 +37,7 @@ export class SyncService implements OnModuleInit {
 
   constructor(
     private readonly sourcesRepository: SourcesRepository,
-    private readonly sourcesService: SourcesService,
+    private readonly articlesScoringService: ArticlesScoringService,
     private readonly articlesRepository: ArticlesRepository,
     private readonly telegramGate: TelegramGate,
   ) {}
@@ -61,7 +62,7 @@ export class SyncService implements OnModuleInit {
         limit(async () => {
           try {
             await this.fetchAndSaveArticles(source);
-            await this.sourcesService.scoreArticlesForUser(userId, source.id, source.type);
+            await this.articlesScoringService.scoreForUser(userId, source.id, source.type);
           } catch (err) {
             await this.sourcesRepository.updateLastError(source.id, (err as Error).message);
             this.logger.warn(`[${source.url}] ошибка при синхронизации: ${String(err)}`);
@@ -111,8 +112,8 @@ export class SyncService implements OnModuleInit {
       await Promise.all(
         userIds.map((uid) =>
           userLimit(() =>
-            this.sourcesService
-              .scoreArticlesForUser(uid, source.id, source.type)
+            this.articlesScoringService
+              .scoreForUser(uid, source.id, source.type)
               .catch((err: unknown) =>
                 this.logger.warn(`Оценка uid=${uid} source=${source.id}: ${String(err)}`),
               ),
@@ -144,7 +145,7 @@ export class SyncService implements OnModuleInit {
 
   private async fetchTelegram(source: Source): Promise<void> {
     // username извлекаем из URL вида https://t.me/username
-    const username = source.url.replace('https://t.me/', '');
+    const username = normalizeTelegramUsername(source.url);
     const channel = await this.telegramGate.fetchChannel(username);
     if (!channel) {
       throw new Error(`Канал @${username} недоступен или приватный`);

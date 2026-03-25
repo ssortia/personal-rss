@@ -1,11 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { SourceType } from '@prisma/client';
 
-import { GroqGate } from './groq.gate';
+import { SCORING_CONTENT_PREVIEW_LENGTH, SCORING_TOKENS_PER_ARTICLE } from '../config/constants';
+
+import { AI_GATEWAY, type AiGateway } from './ai-gateway.interface';
 
 interface ArticleInput {
   title: string;
   content: string | null;
-  sourceType: 'RSS' | 'ATOM' | 'TELEGRAM';
+  sourceType: SourceType;
 }
 
 interface ScoreResult {
@@ -27,7 +30,7 @@ function clampScore(value: unknown): number {
 export class ScoringService {
   private readonly logger = new Logger(ScoringService.name);
 
-  constructor(private readonly groqGate: GroqGate) {}
+  constructor(@Inject(AI_GATEWAY) private readonly aiGateway: AiGateway) {}
 
   /**
    * Оценивает батч статей за один запрос к Groq.
@@ -39,7 +42,7 @@ export class ScoringService {
     categories: string[],
     interestsText?: string | null,
   ): Promise<ScoreResult[]> {
-    if (!this.groqGate.isAvailable) {
+    if (!this.aiGateway.isAvailable) {
       return articles.map(() => NEUTRAL);
     }
 
@@ -48,8 +51,8 @@ export class ScoringService {
 
     const articlesList = articles
       .map((a, i) => {
-        const content = (a.content ?? '').slice(0, 500);
-        const type = a.sourceType === 'TELEGRAM' ? 'TELEGRAM' : 'RSS';
+        const content = (a.content ?? '').slice(0, SCORING_CONTENT_PREVIEW_LENGTH);
+        const type = a.sourceType === SourceType.TELEGRAM ? 'TELEGRAM' : 'RSS';
         return `${i + 1}. [${type}] Title: "${a.title}"\n   Content: "${content}"`;
       })
       .join('\n');
@@ -75,8 +78,8 @@ Rules:
 - Array must have exactly ${articles.length} elements`;
 
     // Увеличиваем лимит токенов пропорционально размеру батча
-    const maxTokens = 150 * articles.length;
-    const text = await this.groqGate.chat([{ role: 'user', content: prompt }], { maxTokens });
+    const maxTokens = SCORING_TOKENS_PER_ARTICLE * articles.length;
+    const text = await this.aiGateway.chat([{ role: 'user', content: prompt }], { maxTokens });
 
     if (!text) {
       return articles.map(() => NEUTRAL);

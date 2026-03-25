@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { Article } from '@prisma/client';
 import { SourceType } from '@prisma/client';
-
 import type { ArticleFeedItem, FeedPage } from '@repo/types';
+
+import { FEED_DEFAULT_LIMIT } from '../config/constants';
+import { PrismaService } from '../prisma/prisma.service';
 
 /** Универсальный формат статьи для импорта из любого источника (RSS, Telegram и др.). */
 export interface RawArticle {
@@ -12,8 +14,6 @@ export interface RawArticle {
   content?: string | null;
   publishedAt?: Date | null;
 }
-
-import { PrismaService } from '../prisma/prisma.service';
 
 interface FeedCursor {
   publishedAt: string | null;
@@ -58,12 +58,12 @@ export class ArticlesRepository {
         userArticles: { none: { userId } },
       },
       orderBy: { publishedAt: 'desc' },
-      take: 50,
+      take: FEED_DEFAULT_LIMIT,
     });
   }
 
-  /** Возвращает последние N статей источника (по умолчанию 50). */
-  findBySource(sourceId: string, limit = 50): Promise<Article[]> {
+  /** Возвращает последние N статей источника (по умолчанию FEED_DEFAULT_LIMIT). */
+  findBySource(sourceId: string, limit = FEED_DEFAULT_LIMIT): Promise<Article[]> {
     return this.prisma.article.findMany({
       where: { sourceId },
       orderBy: { publishedAt: 'desc' },
@@ -84,7 +84,16 @@ export class ArticlesRepository {
   ): Promise<FeedPage> {
     const cursor = cursorRaw ? decodeCursor(cursorRaw) : null;
 
-    // WHERE-условие для курсора: «статьи старше последней виденной»
+    /**
+     * WHERE-условие для cursor-based пагинации по (publishedAt DESC, id DESC).
+     *
+     * Алгоритм:
+     * 1. Статьи с publishedAt < cursor.publishedAt (строго старше)
+     * 2. Статьи с той же датой, но id < cursor.id (tie-breaker)
+     * 3. Статьи без publishedAt идут после всех датированных
+     *
+     * Такой подход даёт стабильный порядок при одинаковых датах.
+     */
     const cursorWhere = cursor
       ? cursor.publishedAt !== null
         ? {
