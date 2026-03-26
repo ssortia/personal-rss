@@ -27,10 +27,10 @@ function makeHtml(opts: {
 }
 
 function mockFetchOk(html: string): void {
-  global.fetch = jest.fn().mockResolvedValue({
+  jest.spyOn(global, 'fetch').mockResolvedValue({
     ok: true,
     text: async () => html,
-  }) as unknown as typeof fetch;
+  } as unknown as Response);
 }
 
 describe('TelegramGate', () => {
@@ -46,18 +46,16 @@ describe('TelegramGate', () => {
 
   describe('fetchChannel — ошибки сети', () => {
     it('возвращает null при HTTP-ошибке (404)', async () => {
-      global.fetch = jest.fn().mockResolvedValue({
+      jest.spyOn(global, 'fetch').mockResolvedValue({
         ok: false,
         status: 404,
-      }) as unknown as typeof fetch;
+      } as unknown as Response);
       const result = await gate.fetchChannel('private_channel');
       expect(result).toBeNull();
     });
 
     it('возвращает null при ошибке сети', async () => {
-      global.fetch = jest
-        .fn()
-        .mockRejectedValue(new Error('Network error')) as unknown as typeof fetch;
+      jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
       const result = await gate.fetchChannel('testchannel');
       expect(result).toBeNull();
     });
@@ -173,23 +171,21 @@ describe('TelegramGate', () => {
 
   describe('fetchChannel — HTTP-запрос', () => {
     it('запрашивает t.me/s/{username}', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
         ok: true,
         text: async () => makeHtml({ title: 'Channel', posts: [] }),
-      });
-      global.fetch = fetchMock as unknown as typeof fetch;
+      } as unknown as Response);
       await gate.fetchChannel('mychannel');
-      expect(fetchMock).toHaveBeenCalledWith('https://t.me/s/mychannel', expect.any(Object));
+      expect(fetchSpy).toHaveBeenCalledWith('https://t.me/s/mychannel', expect.any(Object));
     });
 
     it('передаёт User-Agent с упоминанием CurioBot', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue({
         ok: true,
         text: async () => makeHtml({ title: 'Channel', posts: [] }),
-      });
-      global.fetch = fetchMock as unknown as typeof fetch;
+      } as unknown as Response);
       await gate.fetchChannel('testchannel');
-      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
       const userAgent = (init.headers as Record<string, string>)['User-Agent'];
       expect(userAgent).toContain('CurioBot');
     });

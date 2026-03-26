@@ -93,9 +93,9 @@ describe('UsersService', () => {
     it('каждый вызов возвращает уникальный токен', async () => {
       const token1 = await service.resetFeedToken('user-1');
       const token2 = await service.resetFeedToken('user-1');
-      // Токены генерируются через randomBytes — практически всегда разные
       expect(typeof token1).toBe('string');
       expect(typeof token2).toBe('string');
+      expect(token1).not.toBe(token2);
     });
   });
 });

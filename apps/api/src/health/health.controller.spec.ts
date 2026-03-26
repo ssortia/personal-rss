@@ -7,7 +7,7 @@ describe('HealthController', () => {
     controller = new HealthController();
   });
 
-  it('should return ok status', () => {
+  it('возвращает статус ok', () => {
     const result = controller.check();
     expect(result).toMatchObject({ status: 'ok' });
   });

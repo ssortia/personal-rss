@@ -117,43 +117,41 @@ describe('GroqGate', () => {
       );
     });
 
-    it('ретраит при RateLimitError и возвращает результат после успеха', async () => {
-      jest.useFakeTimers();
+    describe('retry с таймерами', () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { RateLimitError: MockRateLimitError } = require('groq-sdk') as {
         RateLimitError: new (msg: string) => Error;
       };
-      const rateLimitErr = new MockRateLimitError('rate limit error');
 
-      mockCreate
-        .mockRejectedValueOnce(rateLimitErr)
-        .mockRejectedValueOnce(rateLimitErr)
-        .mockResolvedValueOnce({ choices: [{ message: { content: 'success after retry' } }] });
+      beforeEach(() => jest.useFakeTimers());
+      afterEach(() => jest.useRealTimers());
 
-      const promise = gate.chat([{ role: 'user', content: 'test' }]);
-      await jest.runAllTimersAsync();
-      const result = await promise;
+      it('ретраит при RateLimitError и возвращает результат после успеха', async () => {
+        const rateLimitErr = new MockRateLimitError('rate limit error');
 
-      expect(result).toBe('success after retry');
-      expect(mockCreate).toHaveBeenCalledTimes(3);
-      jest.useRealTimers();
-    });
+        mockCreate
+          .mockRejectedValueOnce(rateLimitErr)
+          .mockRejectedValueOnce(rateLimitErr)
+          .mockResolvedValueOnce({ choices: [{ message: { content: 'success after retry' } }] });
 
-    it('возвращает null после исчерпания MAX_RETRIES (4) при постоянном RateLimitError', async () => {
-      jest.useFakeTimers();
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { RateLimitError: MockRateLimitError } = require('groq-sdk') as {
-        RateLimitError: new (msg: string) => Error;
-      };
-      mockCreate.mockRejectedValue(new MockRateLimitError('rate limit'));
+        const promise = gate.chat([{ role: 'user', content: 'test' }]);
+        await jest.runAllTimersAsync();
+        const result = await promise;
 
-      const promise = gate.chat([{ role: 'user', content: 'test' }]);
-      await jest.runAllTimersAsync();
-      const result = await promise;
+        expect(result).toBe('success after retry');
+        expect(mockCreate).toHaveBeenCalledTimes(3);
+      });
 
-      expect(result).toBeNull();
-      expect(mockCreate).toHaveBeenCalledTimes(4); // MAX_RETRIES = 4
-      jest.useRealTimers();
+      it('возвращает null после исчерпания MAX_RETRIES (4) при постоянном RateLimitError', async () => {
+        mockCreate.mockRejectedValue(new MockRateLimitError('rate limit'));
+
+        const promise = gate.chat([{ role: 'user', content: 'test' }]);
+        await jest.runAllTimersAsync();
+        const result = await promise;
+
+        expect(result).toBeNull();
+        expect(mockCreate).toHaveBeenCalledTimes(4); // MAX_RETRIES = 4
+      });
     });
   });
 });
