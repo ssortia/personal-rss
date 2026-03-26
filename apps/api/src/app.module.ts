@@ -17,8 +17,12 @@ import { UsersModule } from './users/users.module';
 
 // Конфиг pino-http: без аннотации типа, чтобы обойти расхождение дженериков pino-http v10
 const pinoHttpConfig = {
-  // Успешные запросы (2xx/3xx) не попадают в лог — только ошибки 4xx/5xx
-  customSuccessfulResponseLogLevel: 'silent',
+  // 2xx/3xx — silent, 4xx — warn, 5xx и ошибки — error
+  customLogLevel: (_req: unknown, res: { statusCode: number }, err: unknown) => {
+    if (err || res.statusCode >= 500) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'silent';
+  },
   transport:
     process.env['NODE_ENV'] !== 'production'
       ? { target: 'pino-pretty', options: { colorize: true } }
