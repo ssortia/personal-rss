@@ -10,7 +10,7 @@
     "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "dotenv -e ../../.env.test -- jest --config ./test/jest-e2e.json --runInBand",
     "db:generate": "prisma generate",
     "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset",
