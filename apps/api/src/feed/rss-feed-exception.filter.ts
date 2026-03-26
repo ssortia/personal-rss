@@ -1,5 +1,12 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+
+// Минимальный интерфейс ответа Fastify, нужный для этого фильтра.
+// Прямой импорт из 'fastify' не используется — fastify не прямая зависимость.
+interface FastifyReply {
+  status(statusCode: number): this;
+  header(key: string, value: string): this;
+  send(payload: unknown): void;
+}
 
 /**
  * Перехватывает HTTP-исключения в feed-эндпоинте и возвращает XML-ответ
