@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev --turbopack --port 3000",
     "build": "next build",
-    "start": "next start",
+    "postbuild": "cp -r .next/static .next/standalone/apps/web/.next/static && cp -r public .next/standalone/apps/web/public",
+    "start": "node --env-file-if-exists=.env.local .next/standalone/apps/web/server.js",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit"
   },

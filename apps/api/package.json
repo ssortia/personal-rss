@@ -6,17 +6,17 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
-    "start": "node dist/main",
+    "start": "node --env-file-if-exists=.env dist/main",
     "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:e2e": "dotenv -e ../../.env.test -- jest --config ./test/jest-e2e.json --runInBand",
     "db:generate": "prisma generate",
-    "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
-    "db:reset": "dotenv -e ../../.env -- prisma migrate reset",
-    "db:migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
-    "db:seed": "dotenv -e ../../.env -- ts-node prisma/seed.ts",
-    "db:studio": "dotenv -e ../../.env -- prisma studio"
+    "db:migrate": "dotenv -e .env -- prisma migrate dev",
+    "db:reset": "dotenv -e .env -- prisma migrate reset",
+    "db:migrate:deploy": "dotenv -e .env -- prisma migrate deploy",
+    "db:seed": "dotenv -e .env -- ts-node prisma/seed.ts",
+    "db:studio": "dotenv -e .env -- prisma studio"
   },
   "dependencies": {
     "@fastify/static": "^9.0.0",

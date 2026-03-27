@@ -21,8 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -41,3 +41,75 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  e2e:
+    name: E2E Tests
+    needs: ci
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nexst_e2e
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    # Общие переменные для всех шагов job
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nexst_e2e
+      JWT_SECRET: e2e-jwt-secret-min-32-chars-long-xxx
+      JWT_REFRESH_SECRET: e2e-refresh-secret-min-32-chars-xxxxx
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      NEXTAUTH_SECRET: e2e-nextauth-secret-min-32-chars-xxx
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      API_URL: http://localhost:3001
+      APP_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @repo/api db:generate
+
+      - name: Apply migrations
+        run: pnpm --filter @repo/api db:migrate
+
+      - name: Build apps
+        run: pnpm build
+
+      - name: Install Playwright browser
+        run: pnpm --filter @repo/e2e exec playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        run: pnpm --filter @repo/e2e e2e
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 7

@@ -33,6 +33,10 @@
     "db:studio": {
       "cache": false,
       "persistent": true
+    },
+    "e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }

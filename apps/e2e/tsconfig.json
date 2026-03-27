@@ -1,0 +1,12 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    // Playwright требует CommonJS — базовый конфиг использует NodeNext
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": "dist"
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
