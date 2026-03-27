@@ -22,6 +22,8 @@ ADR (Architecture Decision Record) — короткий документ, фик
 | [008](./008-frontend-api-client.md)         | Архитектура API-клиента на фронтенде                 | Принято | 2026-03-04 |
 | [009](./009-rss-aggregator-architecture.md) | Архитектура RSS-агрегатора с AI-фильтрацией          | Принято | 2026-03-23 |
 | [010](./010-gate-pattern.md)                | Gate — слой интеграции с внешними API                | Принято | 2026-03-24 |
+| [011](./011-jsonb-user-preferences.md)      | JSONB-поле для хранения пользовательских настроек    | Принято | 2026-03-24 |
+| [012](./012-scheduler-nestjs-schedule.md)   | Планировщик синхронизации: @nestjs/schedule + @Cron  | Принято | 2026-03-24 |
 
 ---
 

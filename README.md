@@ -2,7 +2,8 @@
 
 Сервис персонального RSS-агрегатора с AI-фильтрацией новостей.
 
-Парсит RSS-ленты и Telegram-каналы, оценивает каждую статью с помощью LLM по заданным пользователем интересам и публикует персональный RSS-фид из релевантных материалов. Читать можно в любом RSS-ридере или через Telegram-бота.
+Парсит RSS-ленты и Telegram-каналы, оценивает каждую статью с помощью LLM по заданным пользователем интересам и
+публикует персональный RSS-фид из релевантных материалов. Читать можно в любом RSS-ридере или через Telegram-бота.
 
 ---
 
@@ -50,6 +51,14 @@
 
 ## Быстрый старт
 
+### Требования
+
+| Инструмент | Минимальная версия | Проверить   |
+| ---------- | ------------------ | ----------- |
+| Node.js    | 22                 | `node -v`   |
+| pnpm       | 9                  | `pnpm -v`   |
+| Docker     | 24                 | `docker -v` |
+
 ```bash
 # 1. Клонировать и перейти в директорию
 git clone <url> && cd personal-rss
@@ -61,7 +70,8 @@ pnpm install
 cp .env.example .env            # для docker compose
 cp .env.example apps/api/.env   # для локального запуска API (удали web-переменные)
 cp .env.example apps/web/.env   # для локального запуска Web (удали api-переменные)
-# Заполнить: GROQ_API_KEY, секреты JWT и NEXTAUTH
+# Заполнить секреты (сгенерировать: openssl rand -base64 32):
+#   JWT_SECRET, JWT_REFRESH_SECRET, NEXTAUTH_SECRET, GROQ_API_KEY
 
 # 4. Запустить PostgreSQL
 docker compose up -d
@@ -181,11 +191,36 @@ pnpm --filter @repo/e2e exec playwright test --headed  # видимый брау
 
 ## Документация
 
-| Документ                                                                                     | Описание                        |
-| -------------------------------------------------------------------------------------------- | ------------------------------- |
-| [docs/PRODUCT.md](./docs/PRODUCT.md)                                                         | Продуктовое описание сервиса    |
-| [docs/USER_STORIES.md](./docs/USER_STORIES.md)                                               | User stories                    |
-| [docs/adr/009-rss-aggregator-architecture.md](./docs/adr/009-rss-aggregator-architecture.md) | Архитектурное решение (ADR-009) |
+| Документ                                         | Описание                     |
+| ------------------------------------------------ | ---------------------------- |
+| [docs/DOCUMENTATION.md](./docs/DOCUMENTATION.md) | Правила ведения документации |
+| [docs/PRODUCT.md](./docs/PRODUCT.md)             | Продуктовое описание сервиса |
+| [docs/USER_STORIES.md](./docs/USER_STORIES.md)   | User stories                 |
+
+### Гайды (`docs/guides/`)
+
+| Документ                                               | Описание                 |
+| ------------------------------------------------------ | ------------------------ |
+| [development.md](./docs/guides/development.md)         | Ежедневная разработка    |
+| [adding-a-module.md](./docs/guides/adding-a-module.md) | Добавление нового модуля |
+| [deployment.md](./docs/guides/deployment.md)           | Деплой в продакшен       |
+
+### Architecture Decision Records (`docs/adr/`)
+
+| Документ                                                                            | Описание                                      |
+| ----------------------------------------------------------------------------------- | --------------------------------------------- |
+| [001-monorepo-pnpm-turborepo.md](./docs/adr/001-monorepo-pnpm-turborepo.md)         | Монорепо: pnpm workspaces + Turborepo         |
+| [002-nestjs-fastify-swc.md](./docs/adr/002-nestjs-fastify-swc.md)                   | NestJS: Fastify-адаптер + SWC-компилятор      |
+| [003-nextauth-v5-credentials.md](./docs/adr/003-nextauth-v5-credentials.md)         | Аутентификация: next-auth v5 + Credentials    |
+| [004-tailwind-v4.md](./docs/adr/004-tailwind-v4.md)                                 | CSS-фреймворк: Tailwind CSS v4                |
+| [005-rbac-enum-roles.md](./docs/adr/005-rbac-enum-roles.md)                         | RBAC — ролевая модель на основе enum          |
+| [006-dark-mode-next-themes.md](./docs/adr/006-dark-mode-next-themes.md)             | Тёмная тема: next-themes + class-based подход |
+| [007-repository-layer.md](./docs/adr/007-repository-layer.md)                       | Слой репозиториев в API                       |
+| [008-frontend-api-client.md](./docs/adr/008-frontend-api-client.md)                 | Архитектура API-клиента на фронтенде          |
+| [009-rss-aggregator-architecture.md](./docs/adr/009-rss-aggregator-architecture.md) | Архитектура RSS-агрегатора с AI-фильтрацией   |
+| [010-gate-pattern.md](./docs/adr/010-gate-pattern.md)                               | Gate — слой интеграции с внешними API         |
+| [011-jsonb-user-preferences.md](./docs/adr/011-jsonb-user-preferences.md)           | JSONB-поле для хранения настроек пользователя |
+| [012-scheduler-nestjs-schedule.md](./docs/adr/012-scheduler-nestjs-schedule.md)     | Планировщик синхронизации: @nestjs/schedule   |
 
 ---
 

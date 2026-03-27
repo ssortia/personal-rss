@@ -6,18 +6,11 @@
 
 ---
 
-## Предварительные требования
-
-- Проект запущен (см. [getting-started.md](./getting-started.md))
-- Понимание структуры NestJS-модулей
-
----
-
 ## Шаги
 
 ### 1. Обновить Prisma-схему
 
-Файл: `packages/database/prisma/schema.prisma`
+Файл: `apps/api/prisma/schema.prisma`
 
 ```prisma
 model Post {
@@ -34,6 +27,7 @@ model Post {
 ```
 
 Не забудь добавить связь в модель `User`:
+
 ```prisma
 model User {
   // ...существующие поля...
@@ -50,9 +44,9 @@ pnpm --filter @repo/api db:migrate
 
 Prisma Client обновится автоматически после миграции.
 
-### 3. Добавить общие типы в `@repo/types`
+### 3. Добавить общие типы в `@repo/shared`
 
-Файл: `packages/types/src/post.ts`
+Файл: `packages/shared/src/post.ts`
 
 ```typescript
 import { z } from 'zod';
@@ -76,20 +70,60 @@ export const PostSchema = z.object({
 export type Post = z.infer<typeof PostSchema>;
 ```
 
-Добавить реэкспорт в `packages/types/src/index.ts`:
+Добавить реэкспорт в `packages/shared/src/index.ts`:
 
 ```typescript
 export * from './post';
 ```
 
 Пересобрать пакет:
+
 ```bash
-pnpm --filter @repo/types build
+pnpm --filter @repo/shared build
 ```
 
-### 4. Создать NestJS-модуль
+### 4. Gate для внешнего API (если нужен)
 
-#### 4.1 DTO
+Если модуль интегрируется с внешним сервисом (HTTP API, очередь, стороннее SDK) —
+создай Gate-класс по паттерну из ADR-010. Gate отвечает только за транспорт;
+никакой бизнес-логики.
+
+Файл: `apps/api/src/posts/posts.gate.ts`
+
+```typescript
+import { Injectable, Logger } from '@nestjs/common';
+
+/**
+ * Gate — тонкая обёртка над внешним API.
+ * Отвечает исключительно за транспорт: отправить запрос, получить ответ,
+ * обработать сетевые ошибки. Никакой бизнес-логики.
+ */
+@Injectable()
+export class PostsGate {
+  private readonly logger = new Logger(PostsGate.name);
+
+  async fetchExternalData(id: string): Promise<string | null> {
+    try {
+      const response = await fetch(`https://api.example.com/posts/${id}`);
+      if (!response.ok) {
+        this.logger.warn(`Внешний API вернул ${response.status} для id=${id}`);
+        return null;
+      }
+      const data = await response.json();
+      return data.content ?? null;
+    } catch (err) {
+      this.logger.error({ err }, 'Ошибка запроса к внешнему API');
+      return null;
+    }
+  }
+}
+```
+
+Зарегистрируй Gate в `PostsModule` как провайдер и инжектируй в Service.
+
+### 5. Создать NestJS-модуль
+
+#### 5.1 DTO
 
 Файл: `apps/api/src/posts/dto/create-post.dto.ts`
 
@@ -111,7 +145,7 @@ export class CreatePostDto {
 }
 ```
 
-#### 4.2 Service
+#### 5.2 Service
 
 Файл: `apps/api/src/posts/posts.service.ts`
 
@@ -140,7 +174,7 @@ export class PostsService {
 }
 ```
 
-#### 4.3 Controller
+#### 5.3 Controller
 
 Файл: `apps/api/src/posts/posts.controller.ts`
 
@@ -172,7 +206,7 @@ export class PostsController {
 }
 ```
 
-#### 4.4 Module
+#### 5.4 Module
 
 Файл: `apps/api/src/posts/posts.module.ts`
 
@@ -189,7 +223,7 @@ import { PostsService } from './posts.service';
 export class PostsModule {}
 ```
 
-#### 4.5 Зарегистрировать в AppModule
+#### 5.5 Зарегистрировать в AppModule
 
 Файл: `apps/api/src/app.module.ts`
 
@@ -205,12 +239,12 @@ import { PostsModule } from './posts/posts.module';
 export class AppModule {}
 ```
 
-### 5. Использовать в Web-приложении
+### 6. Использовать в Web-приложении
 
 Новый эндпоинт доступен через `src/lib/api.ts`:
 
 ```typescript
-import type { CreatePostDto, Post } from '@repo/types';
+import type { CreatePostDto, Post } from '@repo/shared';
 
 import { api } from '@/lib/api';
 
@@ -219,7 +253,7 @@ const posts = await api.get<Post[]>('/posts/my', { accessToken });
 const newPost = await api.post<Post>('/posts', dto, { accessToken });
 ```
 
-### 6. Проверить
+### 7. Проверить
 
 ```bash
 pnpm typecheck   # нет ошибок типов
@@ -233,10 +267,11 @@ pnpm build       # всё собирается
 
 ## Чеклист нового модуля
 
-- [ ] Prisma-модель в `schema.prisma`
+- [ ] Prisma-модель в `apps/api/prisma/schema.prisma`
 - [ ] Миграция создана и применена
-- [ ] Zod-схемы в `@repo/types`
+- [ ] Zod-схемы в `@repo/shared`
 - [ ] DTO с декораторами class-validator
+- [ ] Gate-класс, если модуль обращается к внешнему API
 - [ ] Service с Prisma-запросами
 - [ ] Controller с Swagger-декораторами
 - [ ] Module создан и зарегистрирован в AppModule

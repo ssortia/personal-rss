@@ -2,10 +2,6 @@
 
 **Цель:** справочник по командам и процессам, которые используются в работе каждый день.
 
-## Предварительные требования
-
-Проект настроен по [getting-started.md](./getting-started.md).
-
 ---
 
 ## Запуск
@@ -44,7 +40,7 @@ docker compose up --build
 - Исходный код монтируется с хоста — изменения применяются без пересборки образа
 - API перезапускается при изменении `.ts`-файлов (`nest --watch`)
 - Web обновляется через HMR (Turbopack)
-- `@repo/types` пересобирается автоматически при старте; при изменении типов — перезапустить контейнеры:
+- При изменении типов в `@repo/shared` — перезапустить контейнеры:
 
 ```bash
 docker compose restart api web
@@ -73,6 +69,7 @@ pnpm format         # Prettier форматирование
 ```
 
 Запустить только для одного пакета:
+
 ```bash
 pnpm --filter @repo/api lint
 pnpm --filter @repo/web typecheck
@@ -86,6 +83,7 @@ pnpm --filter @repo/web typecheck
 pnpm test                          # все тесты
 pnpm --filter @repo/api test       # unit-тесты API
 pnpm --filter @repo/api test:e2e   # e2e тесты API (требует БД)
+pnpm --filter @repo/e2e e2e        # Playwright E2E тесты (требует production-сборки)
 ```
 
 ---
@@ -117,6 +115,7 @@ http://localhost:3001/api/docs
 ```
 
 Для тестирования защищённых эндпоинтов:
+
 1. Выполни `POST /auth/login` — получи `accessToken`
 2. Нажми кнопку «Authorize» (🔒) вверху страницы
 3. Вставь `accessToken` в поле `BearerAuth`
@@ -125,9 +124,10 @@ http://localhost:3001/api/docs
 
 ## Переменные окружения
 
-Переменные хранятся в `.env` (не коммитится). Пример — в `.env.example`.
+Переменные хранятся в `.env`-файлах (не коммитятся). Пример — в `.env.example`.
 
 При добавлении новой переменной:
+
 1. Добавь в `.env.example` с комментарием и примером значения
 2. Добавь валидацию в `apps/api/src/config/env.ts` (для API) или в `src/env.ts` (для Web)
 3. Обнови таблицу в `CLAUDE.md`
@@ -140,11 +140,20 @@ http://localhost:3001/api/docs
 apps/api/src/
 ├── config/         ← env.ts (валидация переменных окружения)
 ├── prisma/         ← PrismaService (глобальный модуль)
-├── auth/           ← JWT auth: login, refresh, logout
+├── common/         ← BaseRepository (общая логика репозиториев)
+├── auth/           ← JWT auth: login, refresh, logout, сброс пароля
 │   ├── dto/        ← DTO классы (class-validator)
 │   ├── guards/     ← JwtAuthGuard, JwtRefreshGuard
 │   └── strategies/ ← Passport стратегии
-├── users/          ← Пользователи: GET /users/me
+├── users/          ← CRUD пользователей, GET /users/me
+├── sources/        ← Управление источниками (RSS/Atom, Telegram), маппер RSS
+├── articles/       ← Статьи с оценками, GET /articles
+├── feed/           ← Персональный RSS-фид, управление токеном
+├── scoring/        ← AI-оценка статей через GroqGate
+├── preferences/    ← Настройки пользователя (глобальные + per-source)
+├── sync/           ← Планировщик обхода источников, ручной запуск
+├── telegram/       ← TelegramGate для парсинга постов каналов
+├── mail/           ← Email-рассылка (сброс пароля)
 └── health/         ← GET /health
 ```
 
@@ -155,27 +164,35 @@ apps/api/src/
 ```
 apps/web/src/app/
 ├── (auth)/
-│   └── login/page.tsx        ← /login (публичный)
+│   ├── login/page.tsx           ← /login
+│   ├── register/page.tsx        ← /register
+│   ├── forgot-password/page.tsx ← /forgot-password
+│   └── reset-password/page.tsx  ← /reset-password (с токеном из email)
 ├── (dashboard)/
-│   ├── layout.tsx            ← защищённый layout (проверяет auth())
-│   └── page.tsx              ← / (дашборд)
-└── api/auth/[...nextauth]/   ← NextAuth обработчики
+│   ├── layout.tsx               ← защищённый layout (проверяет auth())
+│   ├── page.tsx                 ← / (фид отобранных статей)
+│   ├── sources/page.tsx         ← /sources (управление источниками)
+│   └── preferences/page.tsx     ← /preferences (настройки фильтрации)
+├── admin/
+│   ├── page.tsx                 ← /admin
+│   └── users/page.tsx           ← /admin/users (управление пользователями)
+└── api/auth/[...nextauth]/      ← NextAuth обработчики
     └── route.ts
 ```
 
-Middleware (`src/middleware.ts`) защищает все маршруты кроме `/login`, `/api/*`, и статики.
+Middleware (`src/middleware.ts`) защищает все маршруты кроме `/login`, `/register`, `/api/*` и статики.
 
 ---
 
 ## Shared пакеты
 
-| Пакет | Что экспортирует | Кто использует |
-|---|---|---|
-| `@repo/types` | Zod-схемы и TypeScript-типы для DTO | API, Web |
-| `src/components/ui` | shadcn/ui компоненты, `cn()` утилита | Внутри `apps/web` |
-| `@repo/typescript-config` | tsconfig базы (base, nestjs, nextjs) | Все |
-| `@repo/eslint-config` | ESLint конфиги | Все |
-| `@repo/prettier-config` | Prettier конфиг | Все |
+| Пакет                     | Что экспортирует                     | Кто использует    |
+| ------------------------- | ------------------------------------ | ----------------- |
+| `@repo/shared`            | Zod-схемы и TypeScript-типы для DTO  | API, Web          |
+| `src/components/ui`       | shadcn/ui компоненты, `cn()` утилита | Внутри `apps/web` |
+| `@repo/typescript-config` | tsconfig базы (base, nestjs, nextjs) | Все               |
+| `@repo/eslint-config`     | ESLint конфиги                       | Все               |
+| `@repo/prettier-config`   | Prettier конфиг                      | Все               |
 
 ---
 

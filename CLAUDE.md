@@ -98,7 +98,7 @@ docker compose down
 
 ### Shared Packages
 
-- `@repo/types` — Zod schemas and TypeScript interfaces shared between API and web; the source of truth for data shapes
+- `@repo/shared` — Zod schemas and TypeScript interfaces shared between API and web; the source of truth for data shapes
 
 ### TypeScript
 
@@ -130,8 +130,8 @@ See `.env.example` at the root. Each app reads its own subset:
 Ключевые правила:
 
 - **Новое архитектурное решение** → создать ADR в `docs/adr/` по шаблону из `docs/adr/README.md` и добавить строку в индекс.
-- **Новый гайд или фича** → добавить/обновить соответствующий файл в `docs/guides/`.
-- **Список фич в README.md** должен отражать реальное состояние шаблона — обновлять при добавлении/удалении возможностей.
+- **Новая фича** → обновить `README.md` (раздел «Возможности») и при необходимости `docs/guides/`. Фича считается завершённой только когда написаны код, тесты **и** документация.
+- **Список фич в README.md** должен отражать реальное состояние — обновлять при добавлении/удалении возможностей.
 - **Комментарии в коде** — только «почему», не «что». JSDoc только на публичном API пакетов.
 
 Расположение документации:

@@ -15,11 +15,13 @@
 Создай `.env` на сервере. Никогда не коммить этот файл.
 
 ```env
-# База данных
-POSTGRES_USER=nexst
+# База данных — использовать выделенного пользователя, не суперпользователя postgres
+# CREATE USER curio WITH PASSWORD '...';
+# GRANT ALL ON DATABASE curio_prod TO curio;
+POSTGRES_USER=curio
 POSTGRES_PASSWORD=<сложный пароль>
-POSTGRES_DB=nexst_prod
-DATABASE_URL=postgresql://nexst:<пароль>@db:5432/nexst_prod
+POSTGRES_DB=curio_prod
+DATABASE_URL=postgresql://curio:<пароль>@db:5432/curio_prod
 
 # JWT — генерировать: openssl rand -base64 64
 JWT_SECRET=<минимум 64 символа>
@@ -31,8 +33,20 @@ JWT_REFRESH_EXPIRES_IN=7d
 NEXTAUTH_SECRET=<минимум 64 символа>
 NEXTAUTH_URL=https://your-domain.com
 
-# API
+# API URLs
 NEXT_PUBLIC_API_URL=https://your-domain.com/api
+API_URL=http://api:3001
+APP_URL=https://your-domain.com
+
+# Groq AI — получить на console.groq.com
+GROQ_API_KEY=gsk_...
+
+# Email (SMTP)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=noreply@your-domain.com
+SMTP_PASS=<пароль>
+SMTP_FROM=Curio <noreply@your-domain.com>
 ```
 
 ---
@@ -63,7 +77,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ```bash
 docker compose -f docker-compose.prod.yml exec api \
-  npx prisma migrate deploy --schema=/app/packages/database/prisma/schema.prisma
+  npx prisma migrate deploy --schema=/app/apps/api/prisma/schema.prisma
 ```
 
 ### 5. Проверить
@@ -92,6 +106,7 @@ docker compose -f docker-compose.prod.yml exec api \
 Конфиг: `docker/nginx.conf`
 
 Nginx проксирует:
+
 - `/api/*` → NestJS API на порту 3001
 - `/health` → NestJS health check
 - `/*` → Next.js Web на порту 3000
@@ -121,6 +136,7 @@ server {
 ## Чеклист перед деплоем
 
 ### Безопасность
+
 - [ ] Все секреты (JWT_SECRET и т.д.) — случайные строки длиной 64+ символа
 - [ ] Seed-пользователь (`admin@example.com`) удалён или пароль изменён
 - [ ] `.env` не попал в git (проверить `git status`)
@@ -128,12 +144,14 @@ server {
 - [ ] Rate limiting настроен (см. код `apps/api`)
 
 ### Инфраструктура
+
 - [ ] SSL-сертификат получен и настроен
 - [ ] Healthcheck для DB контейнера в compose работает
 - [ ] Настроен мониторинг (uptime checks на `/health`)
 - [ ] Настроены бэкапы базы данных
 
 ### Приложение
+
 - [ ] `pnpm build` успешно выполняется
 - [ ] `pnpm typecheck` без ошибок
 - [ ] Переменные окружения валидируются при старте (zod в `apps/api/src/config/env.ts`)
@@ -142,9 +160,9 @@ server {
 
 ## Частые проблемы
 
-| Проблема | Причина | Решение |
-|---|---|---|
-| API не запускается | Ошибка валидации env | Проверить логи: `docker compose logs api` |
-| 502 Bad Gateway | API или Web не поднялся | `docker compose ps`, проверить healthcheck |
-| Ошибки Prisma при старте | Миграции не применены | Шаг 4 выше |
-| CORS ошибки | `NEXTAUTH_URL` не совпадает с доменом | Проверить значение в `.env` |
+| Проблема                 | Причина                               | Решение                                    |
+| ------------------------ | ------------------------------------- | ------------------------------------------ |
+| API не запускается       | Ошибка валидации env                  | Проверить логи: `docker compose logs api`  |
+| 502 Bad Gateway          | API или Web не поднялся               | `docker compose ps`, проверить healthcheck |
+| Ошибки Prisma при старте | Миграции не применены                 | Шаг 4 выше                                 |
+| CORS ошибки              | `NEXTAUTH_URL` не совпадает с доменом | Проверить значение в `.env`                |
