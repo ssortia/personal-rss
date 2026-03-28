@@ -1,3 +1,5 @@
+import { Bot } from 'grammy';
+
 import type { UsersService } from '../users/users.service';
 
 // Мок grammy: Bot — заглушка с jest.fn() методами
@@ -13,8 +15,6 @@ jest.mock('grammy', () => ({
 const mockGetEnv = jest.fn();
 jest.mock('../config/env', () => ({ getEnv: () => mockGetEnv() }));
 
-import { Bot } from 'grammy';
-
 import { TelegramBotService } from './telegram-bot.service';
 
 function makeMockUsers() {
@@ -29,7 +29,8 @@ function createService(token: string | undefined, usersService: UsersService) {
 function getLastBotInstance() {
   const MockBot = Bot as jest.MockedClass<typeof Bot>;
   const lastResult = MockBot.mock.results[MockBot.mock.results.length - 1];
-  // mock.results содержит возвращаемые значения конструктора; instances — это this-контекст, не объект возврата
+  // mockImplementation явно возвращает объект, поэтому Jest помещает его в mock.results[i].value.
+  // Для new без mockImplementation (конструктор возвращает undefined) нужно было бы использовать mock.instances.
   return lastResult?.value as { command: jest.Mock; start: jest.Mock; stop: jest.Mock };
 }
 

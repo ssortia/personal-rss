@@ -1,9 +1,5 @@
-import {
-  ArgumentsHost,
-  HttpStatus,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
+import { HttpStatus, NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 import { RssFeedExceptionFilter } from './rss-feed-exception.filter';
 

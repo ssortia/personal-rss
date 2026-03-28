@@ -4,12 +4,12 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import type { JwtService } from '@nestjs/jwt';
 import type { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
-import { MailService } from '../mail/mail.service';
-import { UsersService } from '../users/users.service';
+import type { MailService } from '../mail/mail.service';
+import type { UsersService } from '../users/users.service';
 
 import { AuthService } from './auth.service';
 

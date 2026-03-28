@@ -138,12 +138,14 @@ model Article {
 }
 
 model UserArticle {
-  id          String   @id @default(cuid())
-  userId      String
-  articleId   String
-  score       Float
-  scoreReason String?
-  createdAt   DateTime @default(now())
+  id                 String    @id @default(cuid())
+  userId             String
+  articleId          String
+  score              Float
+  scoreReason        String?
+  /// Когда статья была отправлена пользователю в Telegram. null = ещё не отправлена.
+  telegramNotifiedAt DateTime?
+  createdAt          DateTime  @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
@@ -151,5 +153,6 @@ model UserArticle {
   @@unique([userId, articleId])
   @@index([userId, score])
   @@index([articleId, userId]) // ускоряет NOT EXISTS в findUnscoredBySource
+  @@index([userId, telegramNotifiedAt]) // ускоряет запрос неотправленных статей
   @@map("user_articles")
 }

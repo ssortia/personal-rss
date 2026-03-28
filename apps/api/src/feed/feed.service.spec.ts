@@ -3,9 +3,9 @@ import type { User } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 import type { ArticleFeedItem } from '@repo/shared';
 
-import { ArticlesRepository } from '../articles/articles.repository';
-import { PreferencesRepository } from '../preferences/preferences.repository';
-import { UsersService } from '../users/users.service';
+import type { ArticlesRepository } from '../articles/articles.repository';
+import type { PreferencesRepository } from '../preferences/preferences.repository';
+import type { UsersService } from '../users/users.service';
 
 import { FeedService } from './feed.service';
 

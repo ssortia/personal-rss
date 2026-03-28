@@ -57,4 +57,22 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
     await this.bot.stop();
     this.logger.log('Telegram-бот остановлен');
   }
+
+  /** Возвращает true если бот сконфигурирован и готов к отправке сообщений. */
+  isReady(): boolean {
+    return this.bot !== null;
+  }
+
+  /** Отправляет HTML-сообщение в указанный chat. */
+  async sendMessage(chatId: string, html: string): Promise<void> {
+    await this.bot?.api.sendMessage(chatId, html, { parse_mode: 'HTML' });
+  }
+
+  /**
+   * Пересылает сообщение из публичного Telegram-канала.
+   * Выбрасывает ошибку если канал приватный или сообщение удалено — вызывающий код должен обработать fallback.
+   */
+  async forwardMessage(toChatId: string, fromChatId: string, messageId: number): Promise<void> {
+    await this.bot?.api.forwardMessage(toChatId, fromChatId, messageId);
+  }
 }

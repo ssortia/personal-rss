@@ -1,10 +1,10 @@
 import type { Source } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 
-import { ArticlesRepository } from '../articles/articles.repository';
-import { ArticlesScoringService } from '../scoring/articles-scoring.service';
-import { SourcesRepository } from '../sources/sources.repository';
-import { TelegramGate } from '../telegram/telegram.gate';
+import type { ArticlesRepository } from '../articles/articles.repository';
+import type { ArticlesScoringService } from '../scoring/articles-scoring.service';
+import type { SourcesRepository } from '../sources/sources.repository';
+import type { TelegramGate } from '../telegram/telegram.gate';
 
 import { SyncService } from './sync.service';
 
@@ -166,19 +166,16 @@ describe('SyncService', () => {
     it('обходит все активные источники пользователя', async () => {
       const sources = [makeTelegramSource('s1'), makeTelegramSource('s2')];
       mockSourcesRepo.findActiveUserSources.mockResolvedValue(
-        sources.map(
-          (source) =>
-            ({
-              source,
-              userId: 'user-1',
-              sourceId: source.id,
-              isActive: true,
-              createdAt: new Date(),
-              id: source.id,
-              keywords: [],
-              excludeKeywords: [],
-            }) as any,
-        ),
+        sources.map((source) => ({
+          source,
+          userId: 'user-1',
+          sourceId: source.id,
+          isActive: true,
+          createdAt: new Date(),
+          id: source.id,
+          keywords: [],
+          excludeKeywords: [],
+        })),
       );
 
       const promise = service.syncForUser('user-1');
@@ -193,19 +190,16 @@ describe('SyncService', () => {
     it('сохраняет ошибку источника и продолжает остальные при сбое', async () => {
       const sources = [makeTelegramSource('s1'), makeTelegramSource('s2')];
       mockSourcesRepo.findActiveUserSources.mockResolvedValue(
-        sources.map(
-          (source) =>
-            ({
-              source,
-              userId: 'user-1',
-              sourceId: source.id,
-              isActive: true,
-              createdAt: new Date(),
-              id: source.id,
-              keywords: [],
-              excludeKeywords: [],
-            }) as any,
-        ),
+        sources.map((source) => ({
+          source,
+          userId: 'user-1',
+          sourceId: source.id,
+          isActive: true,
+          createdAt: new Date(),
+          id: source.id,
+          keywords: [],
+          excludeKeywords: [],
+        })),
       );
 
       // Моканием по имени канала — источники запускаются параллельно,

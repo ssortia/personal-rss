@@ -1,8 +1,8 @@
 import type { Article } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 
-import { ArticlesRepository } from '../articles/articles.repository';
-import { PreferencesRepository } from '../preferences/preferences.repository';
+import type { ArticlesRepository } from '../articles/articles.repository';
+import type { PreferencesRepository } from '../preferences/preferences.repository';
 
 import type { AiGateway } from './ai-gateway.interface';
 import { ArticlesScoringService } from './articles-scoring.service';

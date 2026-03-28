@@ -68,7 +68,7 @@ describe('SourcesModule (module)', () => {
   describe('getUserSources', () => {
     it('возвращает список источников пользователя через SourcesRepository→Prisma', async () => {
       prisma.userSource.findMany.mockResolvedValue([
-        { ...baseUserSource, source: baseSource } as any,
+        { ...baseUserSource, source: baseSource } as unknown as UserSource & { source: Source },
       ]);
 
       const result = await sourcesService.getUserSources('user-1');
@@ -87,7 +87,7 @@ describe('SourcesModule (module)', () => {
       prisma.userSource.findUnique.mockResolvedValue(null); // подписки ещё нет
       prisma.userSource.create.mockResolvedValue(baseUserSource);
       prisma.userSource.findMany.mockResolvedValue([
-        { ...baseUserSource, source: baseSource } as any,
+        { ...baseUserSource, source: baseSource } as unknown as UserSource & { source: Source },
       ]);
       prisma.source.update.mockResolvedValue(baseSource); // updateLastFetchAt
 

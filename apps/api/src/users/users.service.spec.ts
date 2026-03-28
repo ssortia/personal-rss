@@ -68,10 +68,13 @@ describe('UsersService', () => {
       const publicUser = {
         id: 'user-2',
         email: 'other@example.com',
-        role: 'ADMIN',
+        role: 'ADMIN' as const,
+        telegramChatId: null,
+        telegramUsername: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      mockRepo.updateRole.mockResolvedValue(publicUser as any);
+      mockRepo.updateRole.mockResolvedValue(publicUser);
       const result = await service.updateRole('user-1', 'user-2', 'ADMIN');
       expect(mockRepo.updateRole).toHaveBeenCalledWith('user-2', 'ADMIN');
       expect(result).toEqual(publicUser);
