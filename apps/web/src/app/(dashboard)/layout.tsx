@@ -29,8 +29,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div className="container mx-auto flex h-14 items-center justify-between px-4">
             {/* Лого + десктопная навигация */}
             <div className="flex items-center gap-6">
-              <Link href="/" className="text-primary text-lg font-bold tracking-tight">
-                {APP_NAME}
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/logo.svg" alt={APP_NAME} width={28} height={28} />
+                <span className="text-primary text-lg font-bold tracking-tight">{APP_NAME}</span>
               </Link>
               {/* Десктопная навигация с подсветкой активного маршрута */}
               <nav className="desktop-nav">
