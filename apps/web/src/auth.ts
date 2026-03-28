@@ -62,9 +62,13 @@ function YandexProvider(
     profile(profile) {
       return {
         id: String(profile.id),
+        // User.name не хранится в БД — поле игнорируется, чтобы не создавать иллюзию использования
         name: null,
         email: profile.default_email,
-        image: null,
+        // Строим URL аватарки из ID — стандартный формат Яндекс CDN
+        image: profile.default_avatar_id
+          ? `https://avatars.yandex.net/get-yapic/${profile.default_avatar_id}/islands-200`
+          : null,
       };
     },
   };
@@ -151,9 +155,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token['refreshToken'] = tokens.refreshToken;
           token['role'] = payload.role ?? 'USER';
           token['accessTokenExpiry'] = getJwtExpiry(tokens.accessToken);
+          // Сохраняем аватарку провайдера — GitHub и Yandex всегда её возвращают
+          token['image'] = user.image ?? null;
           return token;
-        } catch {
-          return { ...token, error: 'RefreshAccessTokenError' as const };
+        } catch (err) {
+          // Отдельный тип ошибки — не путать с истечением refresh token
+          console.error('[auth] OAuth login failed:', err);
+          return { ...token, error: 'OAuthLoginError' as const };
         }
       }
 
@@ -178,6 +186,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.user.id = token.sub ?? '';
       session.user.role = (token['role'] as Role) ?? 'USER';
+      session.user.image = (token['image'] as string | null | undefined) ?? null;
       session.accessToken = token['accessToken'] as string;
       if (token['error']) {
         session.error = token['error'] as 'RefreshAccessTokenError';

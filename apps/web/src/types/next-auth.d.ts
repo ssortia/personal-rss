@@ -5,7 +5,7 @@ import type { Role } from '@repo/shared';
 declare module 'next-auth' {
   interface Session {
     accessToken?: string;
-    error?: 'RefreshAccessTokenError';
+    error?: 'RefreshAccessTokenError' | 'OAuthLoginError';
     user: {
       id: string;
       role: Role;

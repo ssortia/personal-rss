@@ -1,6 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { User } from '@prisma/client';
 
+// Мок getEnv — нужен для generateTelegramLinkToken, который проверяет наличие токена бота
+jest.mock('../config/env', () => ({
+  getEnv: () => ({ TELEGRAM_BOT_TOKEN: 'test-token', TELEGRAM_BOT_NAME: 'TestBot' }),
+}));
+
 import type { UsersRepository } from './users.repository';
 import { UsersService } from './users.service';
 

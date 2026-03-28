@@ -6,7 +6,7 @@ import { RoleProvider } from '@/components/auth/role-provider';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { NavLinks } from '@/components/layout/nav-links';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { UserMenu } from '@/components/layout/user-menu';
 import { requireSession } from '@/lib/auth-guard';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -14,13 +14,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const isAdmin = session.user.role === 'ADMIN';
 
+  // Десктопный nav — профиль убран, он доступен через UserMenu
   const navItems = [
     { href: '/', label: 'Фид' },
     { href: '/sources', label: 'Источники' },
     { href: '/preferences', label: 'Интересы' },
-    { href: '/profile', label: 'Профиль' },
     ...(isAdmin ? [{ href: '/admin/users', label: 'Пользователи' }] : []),
   ];
+
+  // Мобильное меню включает профиль, так как UserMenu там недоступен
+  const mobileNavItems = [...navItems, { href: '/profile', label: 'Профиль' }];
 
   return (
     <RoleProvider role={session.user.role}>
@@ -33,21 +36,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <img src="/logo.svg" alt={APP_NAME} width={28} height={28} />
                 <span className="text-primary text-lg font-bold tracking-tight">{APP_NAME}</span>
               </Link>
-              {/* Десктопная навигация с подсветкой активного маршрута */}
               <nav className="desktop-nav">
                 <NavLinks items={navItems} />
               </nav>
             </div>
 
-            {/* Правая часть: тема, email, выход (десктоп) + бургер (мобиль) */}
+            {/* Правая часть: UserMenu (десктоп) + бургер (мобиль) */}
             <div className="flex items-center gap-3">
-              <ThemeToggle />
               <div className="desktop-only">
-                <span className="text-muted-foreground text-sm">{session.user?.email}</span>
-                <SignOutButton className="text-muted-foreground hover:text-foreground text-sm transition-colors" />
+                <UserMenu email={session.user.email ?? ''} image={session.user.image ?? null} />
               </div>
               <MobileMenu
-                items={navItems}
+                items={mobileNavItems}
                 email={session.user?.email ?? ''}
                 signOutButton={
                   <SignOutButton className="text-muted-foreground hover:text-foreground w-full px-4 py-2 text-left text-sm transition-colors" />
