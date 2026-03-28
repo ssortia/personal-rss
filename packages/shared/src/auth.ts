@@ -28,9 +28,17 @@ export const UserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   role: RoleSchema,
+  telegramUsername: z.string().nullable().optional(),
+  telegramChatId: z.string().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
+
+export const TelegramLinkResponseSchema = z.object({
+  url: z.string().url(),
+  expiresAt: z.coerce.date(),
+});
+export type TelegramLinkResponse = z.infer<typeof TelegramLinkResponseSchema>;
 
 export type User = z.infer<typeof UserSchema>;
 

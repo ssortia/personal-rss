@@ -12,6 +12,8 @@ const PUBLIC_SELECT = {
   id: true,
   email: true,
   role: true,
+  telegramUsername: true,
+  telegramChatId: true,
   createdAt: true,
   updatedAt: true,
 } as const satisfies Prisma.UserSelect;
@@ -98,5 +100,49 @@ export class UsersRepository extends BaseRepository<
 
   findByFeedToken(token: string): Promise<User | null> {
     return this.prisma.user.findUnique({ where: { feedToken: token } });
+  }
+
+  async setTelegramLinkToken(id: string, token: string, expiresAt: Date): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { telegramLinkToken: token, telegramLinkTokenExpiresAt: expiresAt },
+    });
+  }
+
+  /** Очищает только поля токена привязки, не трогая telegramChatId/telegramUsername. */
+  async clearLinkToken(id: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { telegramLinkToken: null, telegramLinkTokenExpiresAt: null },
+    });
+  }
+
+  // Возвращает полную запись пользователя (включая служебные поля токена) — только для внутреннего использования
+  findByTelegramLinkToken(token: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { telegramLinkToken: token } });
+  }
+
+  async linkTelegram(id: string, chatId: string, username: string | null): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        telegramChatId: chatId,
+        telegramUsername: username,
+        telegramLinkToken: null,
+        telegramLinkTokenExpiresAt: null,
+      },
+    });
+  }
+
+  async unlinkTelegram(id: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        telegramChatId: null,
+        telegramUsername: null,
+        telegramLinkToken: null,
+        telegramLinkTokenExpiresAt: null,
+      },
+    });
   }
 }

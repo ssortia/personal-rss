@@ -18,6 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { href: '/', label: 'Фид' },
     { href: '/sources', label: 'Источники' },
     { href: '/preferences', label: 'Интересы' },
+    { href: '/profile', label: 'Профиль' },
     ...(isAdmin ? [{ href: '/admin/users', label: 'Пользователи' }] : []),
   ];
 

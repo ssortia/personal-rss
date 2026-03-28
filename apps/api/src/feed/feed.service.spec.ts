@@ -23,6 +23,10 @@ const baseUser: User = {
   resetToken: null,
   resetTokenExpiresAt: null,
   feedToken: 'feed-token-abc',
+  telegramChatId: null,
+  telegramUsername: null,
+  telegramLinkToken: null,
+  telegramLinkTokenExpiresAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

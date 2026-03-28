@@ -1,4 +1,4 @@
-import type { Role, User } from '@repo/shared';
+import type { Role, TelegramLinkResponse, User } from '@repo/shared';
 
 import { api } from '../lib/api';
 
@@ -25,4 +25,9 @@ export const usersApi = {
 
   updateRole: (userId: string, role: Role, accessToken: string) =>
     api.patch<User>(`/users/${userId}/role`, { role }, { accessToken }),
+
+  generateTelegramLinkToken: (accessToken: string) =>
+    api.post<TelegramLinkResponse>('/users/me/telegram/link-token', {}, { accessToken }),
+
+  unlinkTelegram: (accessToken: string) => api.delete('/users/me/telegram', { accessToken }),
 };

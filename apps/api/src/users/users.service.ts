@@ -1,7 +1,9 @@
 import { randomBytes } from 'crypto';
 
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import type { Role, User } from '@prisma/client';
+
+import { getEnv } from '../config/env';
 
 import type { ListUsersQueryDto } from './dto/list-users-query.dto';
 import type { PublicUser } from './users.repository';
@@ -68,5 +70,44 @@ export class UsersService {
 
   findByFeedToken(token: string): Promise<User | null> {
     return this.usersRepository.findByFeedToken(token);
+  }
+
+  /** Генерирует одноразовый токен для привязки Telegram (TTL 15 мин). */
+  async generateTelegramLinkToken(userId: string): Promise<{ url: string; expiresAt: Date }> {
+    const { TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_NAME } = getEnv();
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_BOT_NAME) {
+      throw new ServiceUnavailableException(
+        'Telegram-бот не сконфигурирован. Задайте TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_NAME в .env.',
+      );
+    }
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await this.usersRepository.setTelegramLinkToken(userId, token, expiresAt);
+    const url = `https://t.me/${TELEGRAM_BOT_NAME}?start=${token}`;
+    return { url, expiresAt };
+  }
+
+  /**
+   * Подтверждает привязку по токену из Telegram-бота.
+   * Возвращает true — успешно; false — токен не найден или истёк.
+   */
+  async linkTelegramByToken(
+    token: string,
+    chatId: string,
+    username: string | null,
+  ): Promise<boolean> {
+    const user = await this.usersRepository.findByTelegramLinkToken(token);
+    if (!user) return false;
+    if (!user.telegramLinkTokenExpiresAt || user.telegramLinkTokenExpiresAt < new Date()) {
+      // Очищаем только токен — существующую привязку не трогаем
+      await this.usersRepository.clearLinkToken(user.id);
+      return false;
+    }
+    await this.usersRepository.linkTelegram(user.id, chatId, username);
+    return true;
+  }
+
+  async unlinkTelegram(userId: string): Promise<void> {
+    return this.usersRepository.unlinkTelegram(userId);
   }
 }

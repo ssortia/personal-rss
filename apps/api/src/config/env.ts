@@ -26,6 +26,10 @@ const envSchema = z.object({
   GROQ_TPM_LIMIT: z.coerce.number().int().positive().default(6000),
   // Интервал обхода источников в минутах
   FEED_SYNC_INTERVAL_MIN: z.coerce.number().int().positive().default(30),
+  // Telegram Bot (опционально — фича отключена если не задано)
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  // Имя бота без @ — используется для построения t.me/{botName}?start={token}
+  TELEGRAM_BOT_NAME: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;

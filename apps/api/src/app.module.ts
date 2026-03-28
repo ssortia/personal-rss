@@ -13,6 +13,7 @@ import { PreferencesModule } from './preferences/preferences.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SourcesModule } from './sources/sources.module';
 import { SyncModule } from './sync/sync.module';
+import { TelegramBotModule } from './telegram-bot/telegram-bot.module';
 import { UsersModule } from './users/users.module';
 
 // Конфиг pino-http: без аннотации типа, чтобы обойти расхождение дженериков pino-http v10
@@ -45,6 +46,7 @@ const pinoHttpConfig = {
     SyncModule,
     PreferencesModule,
     HealthModule,
+    TelegramBotModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
