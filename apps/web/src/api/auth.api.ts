@@ -1,12 +1,14 @@
 import type {
   ForgotPasswordDto,
   LoginDto,
+  OAuthLoginDto,
   RegisterDto,
   ResetPasswordDto,
   Tokens,
 } from '@repo/shared';
 
 import { api } from '../lib/api';
+import { env } from '../lib/env';
 
 /** Доменные функции для auth-эндпоинтов. Без React, без хуков — чистые async-функции. */
 export const authApi = {
@@ -21,4 +23,10 @@ export const authApi = {
   forgotPassword: (data: ForgotPasswordDto) => api.post<void>('/auth/forgot-password', data),
 
   resetPassword: (data: ResetPasswordDto) => api.post<void>('/auth/reset-password', data),
+
+  /** Вызывается сервером next-auth после успешного OAuth-входа. */
+  oauthLogin: (data: OAuthLoginDto) =>
+    api.post<Tokens>('/auth/oauth', data, {
+      headers: { 'x-internal-token': env.INTERNAL_API_SECRET },
+    }),
 };

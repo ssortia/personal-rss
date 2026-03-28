@@ -30,6 +30,8 @@ const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   // Имя бота без @ — используется для построения t.me/{botName}?start={token}
   TELEGRAM_BOT_NAME: z.string().optional(),
+  // Межсервисный секрет: защищает внутренние эндпоинты от внешних вызовов
+  INTERNAL_API_SECRET: z.string().min(32),
 });
 
 type Env = z.infer<typeof envSchema>;

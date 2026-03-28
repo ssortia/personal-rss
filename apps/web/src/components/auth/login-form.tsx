@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import type { OAuthProvider } from '@/lib/oauth-providers';
 import type { LoginDto } from '@repo/shared';
 import { LoginDtoSchema } from '@repo/shared';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
@@ -11,7 +12,13 @@ import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export function LoginForm() {
+import { OAuthButtons } from './oauth-buttons';
+
+interface LoginFormProps {
+  enabledProviders: OAuthProvider[];
+}
+
+export function LoginForm({ enabledProviders }: LoginFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -60,6 +67,7 @@ export function LoginForm() {
             Войти
           </Button>
         </ZodForm>
+        <OAuthButtons enabledProviders={enabledProviders} />
         <div className="text-muted-foreground mt-4 space-y-2 text-center text-sm">
           <p>
             <Link href="/forgot-password" className="hover:text-foreground underline">

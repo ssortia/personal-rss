@@ -15,7 +15,8 @@ enum Role {
 model User {
   id                  String    @id @default(cuid())
   email               String    @unique
-  password            String
+  /// Null для пользователей, созданных через OAuth без пароля
+  password            String?
   role                Role      @default(USER)
   feedToken                  String?   @unique
   refreshToken               String?
@@ -31,10 +32,28 @@ model User {
   userSources     UserSource[]
   userPreferences UserPreferences[]
   userArticles    UserArticle[]
+  oauthAccounts   OAuthAccount[]
 
   @@index([role])
   @@index([createdAt])
   @@map("users")
+}
+
+/// OAuth-аккаунты, привязанные к пользователю (Google, GitHub, Yandex и др.)
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  /// Идентификатор провайдера: "google" | "github" | "yandex"
+  provider          String
+  /// ID пользователя на стороне провайдера
+  providerAccountId String
+  userId            String
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
 enum SourceType {

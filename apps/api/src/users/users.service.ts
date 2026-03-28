@@ -33,6 +33,18 @@ export class UsersService {
     return this.usersRepository.create({ email, password: hashedPassword });
   }
 
+  findByOAuthAccount(provider: string, providerAccountId: string): Promise<User | null> {
+    return this.usersRepository.findByOAuthAccount(provider, providerAccountId);
+  }
+
+  createWithOAuth(email: string, provider: string, providerAccountId: string): Promise<User> {
+    return this.usersRepository.createWithOAuth(email, provider, providerAccountId);
+  }
+
+  linkOAuthAccount(userId: string, provider: string, providerAccountId: string): Promise<void> {
+    return this.usersRepository.linkOAuthAccount(userId, provider, providerAccountId);
+  }
+
   async updateRole(callerId: string, targetId: string, role: Role): Promise<PublicUser> {
     if (callerId === targetId) throw new ForbiddenException('Cannot change your own role');
     return this.usersRepository.updateRole(targetId, role);

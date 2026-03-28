@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Role, User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 import { RESET_TOKEN_TTL_MS } from '../config/constants';
@@ -26,7 +27,8 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findByEmail(email);
-    if (!user) {
+    // Нет пользователя или у него нет пароля (OAuth-аккаунт без пароля)
+    if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -70,6 +72,48 @@ export class AuthService {
 
   async logout(userId: string): Promise<void> {
     await this.usersService.updateRefreshToken(userId, null);
+  }
+
+  /**
+   * OAuth-вход: находит или создаёт пользователя по провайдеру и возвращает токены.
+   * Логика:
+   *   1. Есть OAuthAccount(provider+id) → вернуть токены этого пользователя
+   *   2. Нет, но есть User(email)       → привязать провайдера → вернуть токены
+   *   3. Нет ни того, ни другого        → создать User + OAuthAccount → вернуть токены
+   *
+   * Race condition: при параллельных запросах createWithOAuth может упасть
+   * с P2002 (unique constraint). В этом случае повторяем поиск — optimistic retry.
+   */
+  async oauthLogin(provider: string, providerAccountId: string, email: string) {
+    // 1. Ищем уже привязанный аккаунт
+    let user = await this.usersService.findByOAuthAccount(provider, providerAccountId);
+
+    if (!user) {
+      // 2. Ищем по email — возможно, пользователь ранее зарегался через credentials
+      const existing = await this.usersService.findByEmail(email);
+      if (existing) {
+        // linkOAuthAccount использует upsert — безопасно при параллельных вызовах
+        await this.usersService.linkOAuthAccount(existing.id, provider, providerAccountId);
+        user = existing;
+      } else {
+        // 3. Совсем новый пользователь — создаём без пароля
+        try {
+          user = await this.usersService.createWithOAuth(email, provider, providerAccountId);
+        } catch (e) {
+          // Параллельный запрос успел создать запись — повторяем поиск
+          if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+            user =
+              (await this.usersService.findByOAuthAccount(provider, providerAccountId)) ??
+              (await this.usersService.findByEmail(email));
+            if (!user) throw e;
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
+
+    return this.login(user);
   }
 
   async forgotPassword(email: string): Promise<void> {

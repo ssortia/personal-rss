@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <!-- Цвета бренда: светлее → темнее, соответствуют primary hsl(258 78% 52%) -->
+      <stop offset="0%"   stop-color="#9F72F8"/>
+      <stop offset="100%" stop-color="#5B1DB5"/>
+    </linearGradient>
+    <!-- Мягкое свечение под C-дугой для глубины -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Фон: закруглённый прямоугольник в цветах бренда -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+
+  <!-- Лёгкий блик вверху для ощущения объёма -->
+  <rect x="8" y="4" width="32" height="18" rx="10"
+        fill="white" fill-opacity="0.06"/>
+
+  <!--
+    Основная C-дуга: центр (32,32), радиус 18 пикселей.
+    Концы при ±45°: (44.7, 19.3) и (44.7, 44.7).
+    sweep=1 + large-arc=1 → дуга 270° проходит через левую сторону = форма «C».
+  -->
+  <path d="M44.7 19.3 A18 18 0 1 1 44.7 44.7"
+        stroke="white" stroke-width="5.5" stroke-linecap="round"
+        fill="none" filter="url(#glow)"/>
+
+  <!--
+    Три точки по вертикальной оси внутри C — символизируют
+    поток статей, отобранных куратором (каждая точка = новость).
+    Центральная — полная, крайние — приглушены (иерархия важности).
+  -->
+  <circle cx="32" cy="23.5" r="2.4" fill="white" fill-opacity="0.50"/>
+  <circle cx="32" cy="32"   r="2.4" fill="white"/>
+  <circle cx="32" cy="40.5" r="2.4" fill="white" fill-opacity="0.50"/>
+
+  <!--
+    Ромб-искра в проёме C (центр ~50.8, 32) — символ AI-отбора.
+    Вытянут по вертикали: 4.8 px высота, 3.6 px ширина.
+  -->
+  <path d="M49 32 L50.8 29.6 L52.6 32 L50.8 34.4 Z"
+        fill="white" fill-opacity="0.92"/>
+</svg>

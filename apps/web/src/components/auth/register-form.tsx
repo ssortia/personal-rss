@@ -6,6 +6,7 @@ import { authApi } from '@/api/auth.api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthError } from '@/lib/form-errors';
+import type { OAuthProvider } from '@/lib/oauth-providers';
 import type { RegisterDto } from '@repo/shared';
 import { RegisterDtoSchema } from '@repo/shared';
 import { TextField, ZodForm } from '@ssortia/shadcn-zod-bridge';
@@ -13,7 +14,13 @@ import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-export function RegisterForm() {
+import { OAuthButtons } from './oauth-buttons';
+
+interface RegisterFormProps {
+  enabledProviders: OAuthProvider[];
+}
+
+export function RegisterForm({ enabledProviders }: RegisterFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -69,6 +76,7 @@ export function RegisterForm() {
             Зарегистрироваться
           </Button>
         </ZodForm>
+        <OAuthButtons enabledProviders={enabledProviders} />
         <p className="text-muted-foreground mt-4 text-center text-sm">
           Уже есть аккаунт?{' '}
           <Link href="/login" className="hover:text-foreground underline">

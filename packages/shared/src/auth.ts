@@ -64,3 +64,11 @@ export const ResetPasswordDtoSchema = z.object({
 });
 
 export type ResetPasswordDto = z.infer<typeof ResetPasswordDtoSchema>;
+
+export const OAuthLoginDtoSchema = z.object({
+  provider: z.string(),
+  providerAccountId: z.string(),
+  email: z.string().email(),
+});
+
+export type OAuthLoginDto = z.infer<typeof OAuthLoginDtoSchema>;

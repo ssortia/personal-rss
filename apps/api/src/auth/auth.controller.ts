@@ -7,8 +7,10 @@ import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { InternalAuthGuard } from './guards/internal-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 
@@ -65,5 +67,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password using token from email' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto.email, dto.token, dto.password);
+  }
+
+  @Post('oauth')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(InternalAuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({ summary: 'OAuth login/register — вызывается только сервером next-auth' })
+  async oauthLogin(@Body() dto: OAuthLoginDto) {
+    return this.authService.oauthLogin(dto.provider, dto.providerAccountId, dto.email);
   }
 }

@@ -75,7 +75,9 @@ export default function ProfilePage() {
           title="Telegram"
           description="Привяжите аккаунт, чтобы получать отобранные статьи прямо в мессенджере."
         >
-          <TelegramLinkSection />
+          <div className="flex h-full items-end">
+            <TelegramLinkSection />
+          </div>
         </Section>
       </div>
     </div>

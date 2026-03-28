@@ -145,4 +145,34 @@ export class UsersRepository extends BaseRepository<
       },
     });
   }
+
+  /** Ищет пользователя по привязанному OAuth-аккаунту. */
+  findByOAuthAccount(provider: string, providerAccountId: string): Promise<User | null> {
+    return this.prisma.user.findFirst({
+      where: { oauthAccounts: { some: { provider, providerAccountId } } },
+    });
+  }
+
+  /** Создаёт нового пользователя без пароля и сразу привязывает OAuth-аккаунт. */
+  async createWithOAuth(email: string, provider: string, providerAccountId: string): Promise<User> {
+    return this.prisma.user.create({
+      data: {
+        email,
+        oauthAccounts: { create: { provider, providerAccountId } },
+      },
+    });
+  }
+
+  /** Привязывает OAuth-аккаунт к уже существующему пользователю. */
+  async linkOAuthAccount(
+    userId: string,
+    provider: string,
+    providerAccountId: string,
+  ): Promise<void> {
+    await this.prisma.oAuthAccount.upsert({
+      where: { provider_providerAccountId: { provider, providerAccountId } },
+      create: { userId, provider, providerAccountId },
+      update: {},
+    });
+  }
 }
