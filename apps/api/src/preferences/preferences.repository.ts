@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
 const DEFAULTS: Required<PreferencesSettings> = {
-  relevanceThreshold: 0.6,
+  relevanceThreshold: 0.75,
   interestsText: null,
   selectedCategories: [],
 };
@@ -17,6 +17,15 @@ export class PreferencesRepository {
 
   findAllCategories(): Promise<Category[]> {
     return this.prisma.category.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  /** Проверяет, что пользователь подписан на источник (для проверки доступа в сервисе). */
+  async hasUserSource(userId: string, sourceId: string): Promise<boolean> {
+    const row = await this.prisma.userSource.findUnique({
+      where: { userId_sourceId: { userId, sourceId } },
+      select: { id: true },
+    });
+    return row !== null;
   }
 
   /**

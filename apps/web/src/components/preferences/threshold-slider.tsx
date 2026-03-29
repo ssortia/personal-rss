@@ -5,24 +5,20 @@ import { useEffect, useRef, useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { usePreferencesSettings, useUpdatePreferencesSettings } from '@/hooks/use-preferences';
 
-export function ThresholdSlider() {
-  const { data: settings, isLoading } = usePreferencesSettings();
-  const { mutate: updateSettings } = useUpdatePreferencesSettings();
+interface ThresholdSliderProps {
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}
 
-  const [localValue, setLocalValue] = useState<number | null>(null);
-  const initialized = useRef(false);
+/** Controlled-компонент ползунка порога релевантности. */
+export function ThresholdSlider({ value, onChange, disabled }: ThresholdSliderProps) {
+  const [localValue, setLocalValue] = useState(value);
 
-  // Инициализируем localValue из настроек строго один раз при первой загрузке данных
+  // Синхронизируем localValue при изменении внешнего value (например, при загрузке данных)
   useEffect(() => {
-    if (!initialized.current && settings?.relevanceThreshold !== undefined) {
-      setLocalValue(settings.relevanceThreshold);
-      initialized.current = true;
-    }
-  }, [settings?.relevanceThreshold]);
-
-  if (isLoading || localValue === null) {
-    return <div className="bg-muted h-5 w-full animate-pulse rounded" />;
-  }
+    setLocalValue(value);
+  }, [value]);
 
   return (
     <div className="space-y-3">
@@ -37,13 +33,41 @@ export function ThresholdSlider() {
         max={1}
         step={0.05}
         value={[localValue]}
-        onValueChange={([value]) => setLocalValue(value)}
-        onValueCommit={([value]) => updateSettings({ relevanceThreshold: value })}
+        disabled={disabled}
+        onValueChange={([v]) => setLocalValue(v)}
+        onValueCommit={([v]) => onChange(v)}
       />
       <div className="text-muted-foreground flex justify-between text-xs">
         <span>0 — всё подряд</span>
         <span>1 — только точные совпадения</span>
       </div>
     </div>
+  );
+}
+
+/** Контейнер: ползунок для глобальных настроек (самостоятельно загружает и сохраняет). */
+export function GlobalThresholdSlider() {
+  const { data: settings, isLoading } = usePreferencesSettings();
+  const { mutate: updateSettings } = useUpdatePreferencesSettings();
+
+  const initialized = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!initialized.current && settings?.relevanceThreshold !== undefined) {
+      initialized.current = true;
+      setReady(true);
+    }
+  }, [settings?.relevanceThreshold]);
+
+  if (isLoading || !ready) {
+    return <div className="bg-muted h-5 w-full animate-pulse rounded" />;
+  }
+
+  return (
+    <ThresholdSlider
+      value={settings!.relevanceThreshold}
+      onChange={(v) => updateSettings({ relevanceThreshold: v })}
+    />
   );
 }

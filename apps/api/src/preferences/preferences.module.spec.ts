@@ -42,7 +42,7 @@ describe('PreferencesModule (module)', () => {
       const settings = await preferencesService.getSettings('user-1');
 
       expect(settings).toEqual({
-        relevanceThreshold: 0.6,
+        relevanceThreshold: 0.75,
         interestsText: null,
         selectedCategories: [],
       });

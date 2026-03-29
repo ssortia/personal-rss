@@ -83,12 +83,16 @@ describe('SourcesModule (module)', () => {
 
   describe('addSource (RSS)', () => {
     it('создаёт источник и подписку если они не существуют', async () => {
+      const userSourceWithSource = {
+        ...baseUserSource,
+        source: baseSource,
+      } as unknown as UserSource & { source: Source };
+
       prisma.source.upsert.mockResolvedValue(baseSource);
       prisma.userSource.findUnique.mockResolvedValue(null); // подписки ещё нет
       prisma.userSource.create.mockResolvedValue(baseUserSource);
-      prisma.userSource.findMany.mockResolvedValue([
-        { ...baseUserSource, source: baseSource } as unknown as UserSource & { source: Source },
-      ]);
+      // findUniqueOrThrow вызывается в findUserSourceWithSource после создания
+      prisma.userSource.findUniqueOrThrow.mockResolvedValue(userSourceWithSource);
       prisma.source.update.mockResolvedValue(baseSource); // updateLastFetchAt
 
       const result = await sourcesService.addSource('user-1', 'https://example.com/feed');
@@ -101,7 +105,8 @@ describe('SourcesModule (module)', () => {
           data: expect.objectContaining({ userId: 'user-1', sourceId: 'source-1' }),
         }),
       );
-      expect(result).toHaveLength(1);
+      // Теперь addSource возвращает единственный созданный UserSource, а не весь список
+      expect(result).toEqual(userSourceWithSource);
     });
 
     it('бросает ConflictException если подписка уже существует', async () => {

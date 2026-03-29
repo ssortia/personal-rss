@@ -31,9 +31,9 @@ export class SourcesService {
   /**
    * Добавляет RSS/Atom-источник для пользователя.
    * Если источник уже существует в БД — переиспользует его (shared sources).
-   * Возвращает обновлённый список источников пользователя.
+   * Возвращает только что созданный UserSource с данными источника.
    */
-  async addSource(userId: string, url: string): Promise<UserSourceWithSource[]> {
+  async addSource(userId: string, url: string): Promise<UserSourceWithSource> {
     // Проверяем доступность и валидность ленты
     const parser = new Parser({ timeout: 10000 });
     let feed: Awaited<ReturnType<Parser['parseURL']>>;
@@ -71,14 +71,15 @@ export class SourcesService {
         this.logger.error({ err, sourceUrl: source.url }, 'Ошибка первичного импорта RSS'),
       );
 
-    return this.sourcesRepository.findUserSources(userId);
+    return this.sourcesRepository.findUserSourceWithSource(userId, source.id);
   }
 
   /**
    * Добавляет публичный Telegram-канал как источник.
    * Принимает username в любом формате: @channel, t.me/channel, https://t.me/channel.
+   * Возвращает только что созданный UserSource с данными источника.
    */
-  async addTelegramChannel(userId: string, rawUsername: string): Promise<UserSourceWithSource[]> {
+  async addTelegramChannel(userId: string, rawUsername: string): Promise<UserSourceWithSource> {
     const username = normalizeTelegramUsername(rawUsername);
 
     const channel = await this.telegramGate.fetchChannel(username);
@@ -115,7 +116,7 @@ export class SourcesService {
         this.logger.error(`Ошибка импорта постов Telegram @${username}: ${String(err)}`),
       );
 
-    return this.sourcesRepository.findUserSources(userId);
+    return this.sourcesRepository.findUserSourceWithSource(userId, source.id);
   }
 
   getUserSources(userId: string): Promise<UserSourceWithSource[]> {

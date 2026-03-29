@@ -9,18 +9,20 @@ import {
   useUpdatePreferencesSettings,
 } from '@/hooks/use-preferences';
 
-export function CategoryPicker() {
-  const { data: categories, isLoading: loadingCategories, isError } = useCategories();
-  const { data: settings, isLoading: loadingSettings } = usePreferencesSettings();
-  const { mutate: updateSettings, isPending } = useUpdatePreferencesSettings();
+interface CategoryPickerProps {
+  selectedSlugs: string[];
+  onChange: (slugs: string[]) => void;
+  disabled?: boolean;
+}
+
+/** Controlled-компонент выбора категорий. */
+export function CategoryPicker({ selectedSlugs, onChange, disabled }: CategoryPickerProps) {
+  const { data: categories, isLoading, isError } = useCategories();
 
   // useMemo должен быть до ранних возвратов — правила хуков
-  const selectedSlugs = useMemo(
-    () => new Set(settings?.selectedCategories ?? []),
-    [settings?.selectedCategories],
-  );
+  const selectedSet = useMemo(() => new Set(selectedSlugs), [selectedSlugs]);
 
-  if (loadingCategories || loadingSettings) {
+  if (isLoading) {
     return (
       <div className="flex flex-wrap gap-2">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -35,30 +37,30 @@ export function CategoryPicker() {
   }
 
   function toggle(slug: string) {
-    const next = new Set(selectedSlugs);
+    const next = new Set(selectedSet);
     if (next.has(slug)) {
       next.delete(slug);
     } else {
       next.add(slug);
     }
-    updateSettings({ selectedCategories: Array.from(next) });
+    onChange(Array.from(next));
   }
 
   return (
     <div className="flex flex-wrap gap-2">
       {categories?.map((category) => {
-        const selected = selectedSlugs.has(category.slug);
+        const selected = selectedSet.has(category.slug);
         return (
           <button
             key={category.id}
             onClick={() => toggle(category.slug)}
-            disabled={isPending}
+            disabled={disabled}
             className={[
               'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
               selected
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-background text-foreground border-input hover:bg-accent',
-              isPending ? 'opacity-60' : '',
+              disabled ? 'opacity-60' : '',
             ].join(' ')}
           >
             {category.name}
@@ -66,5 +68,29 @@ export function CategoryPicker() {
         );
       })}
     </div>
+  );
+}
+
+/** Контейнер: выбор категорий для глобальных настроек (самостоятельно загружает и сохраняет). */
+export function GlobalCategoryPicker() {
+  const { data: settings, isLoading } = usePreferencesSettings();
+  const { mutate: updateSettings, isPending } = useUpdatePreferencesSettings();
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-8 w-20 rounded-full" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <CategoryPicker
+      selectedSlugs={settings?.selectedCategories ?? []}
+      onChange={(slugs) => updateSettings({ selectedCategories: slugs })}
+      disabled={isPending}
+    />
   );
 }

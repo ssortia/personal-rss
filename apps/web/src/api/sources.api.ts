@@ -10,7 +10,7 @@ import { api } from '../lib/api';
 /** Доменные функции для sources-эндпоинтов. Без React, без хуков — чистые async-функции. */
 export const sourcesApi = {
   add: (data: AddSourceDto, accessToken: string) =>
-    api.post<UserSourceWithSource[]>('/sources', data, { accessToken }),
+    api.post<UserSourceWithSource>('/sources', data, { accessToken }),
 
   list: (accessToken: string) => api.get<UserSourceWithSource[]>('/sources', { accessToken }),
 
@@ -21,5 +21,5 @@ export const sourcesApi = {
     api.delete(`/sources/${sourceId}`, { accessToken }),
 
   addTelegram: (data: AddTelegramSourceDto, accessToken: string) =>
-    api.post<UserSourceWithSource[]>('/sources/telegram', data, { accessToken }),
+    api.post<UserSourceWithSource>('/sources/telegram', data, { accessToken }),
 };

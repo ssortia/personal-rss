@@ -54,6 +54,14 @@ export class SourcesRepository {
     return this.prisma.userSource.create({ data: { userId, sourceId } });
   }
 
+  /** Возвращает UserSource вместе с данными Source — используется сразу после создания. */
+  findUserSourceWithSource(userId: string, sourceId: string): Promise<UserSourceWithSource> {
+    return this.prisma.userSource.findUniqueOrThrow({
+      where: { userId_sourceId: { userId, sourceId } },
+      include: { source: true },
+    });
+  }
+
   findUserSources(userId: string): Promise<UserSourceWithSource[]> {
     return this.prisma.userSource.findMany({
       where: { userId },

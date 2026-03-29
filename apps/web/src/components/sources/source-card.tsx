@@ -1,7 +1,8 @@
 'use client';
 
 import type { UserSourceWithSource } from '@repo/shared';
-import { AlertCircle, Clock, EllipsisVertical, Power, Trash2 } from 'lucide-react';
+import { AlertCircle, Clock, EllipsisVertical, Power, Settings2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 import {
   AlertDialog,
@@ -25,73 +26,88 @@ import { useDeleteSource, useToggleSource } from '@/hooks/use-sources';
 import { formatRelativeTime } from '@/lib/date';
 
 import { SourceFavicon } from './source-favicon';
+import { SourcePreferencesDialog } from './source-preferences-dialog';
 
 interface SourceCardProps {
   userSource: UserSourceWithSource;
 }
 
 interface SourceCardActionsProps {
-  sourceId: string;
-  sourceTitle: string;
-  isActive: boolean;
+  userSource: UserSourceWithSource;
 }
 
-/** Меню действий карточки источника: включение/отключение и удаление. */
-function SourceCardActions({ sourceId, sourceTitle, isActive }: SourceCardActionsProps) {
+/** Меню действий карточки источника: настройки фильтрации, включение/отключение и удаление. */
+function SourceCardActions({ userSource }: SourceCardActionsProps) {
   const { mutate: toggleSource, isPending: isToggling } = useToggleSource();
   const { mutate: deleteSource, isPending: isDeleting } = useDeleteSource();
+  const [prefsOpen, setPrefsOpen] = useState(false);
+
+  const { source, isActive } = userSource;
 
   return (
-    <AlertDialog>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-            aria-label="Действия"
-          >
-            <EllipsisVertical className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => toggleSource({ sourceId, isActive: !isActive })}
-            disabled={isToggling}
-          >
-            <Power className="h-4 w-4" />
-            {isActive ? 'Отключить' : 'Включить'}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <AlertDialogTrigger asChild>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              disabled={isDeleting}
+    <>
+      <AlertDialog>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="text-muted-foreground hover:text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+              aria-label="Действия"
             >
-              <Trash2 className="h-4 w-4" />
-              Удалить
+              <EllipsisVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setPrefsOpen(true)}>
+              <Settings2 className="h-4 w-4" />
+              Настройки фильтрации
             </DropdownMenuItem>
-          </AlertDialogTrigger>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => toggleSource({ sourceId: source.id, isActive: !isActive })}
+              disabled={isToggling}
+            >
+              <Power className="h-4 w-4" />
+              {isActive ? 'Отключить' : 'Включить'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4" />
+                Удалить
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Удалить источник?</AlertDialogTitle>
-          <AlertDialogDescription>
-            «{sourceTitle}» будет удалён из вашего списка, а его статьи исчезнут из фида. Это
-            действие нельзя отменить.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Отмена</AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={() => deleteSource(sourceId)}
-          >
-            Удалить
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить источник?</AlertDialogTitle>
+            <AlertDialogDescription>
+              «{source.title}» будет удалён из вашего списка, а его статьи исчезнут из фида. Это
+              действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteSource(source.id)}
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <SourcePreferencesDialog
+        userSource={userSource}
+        open={prefsOpen}
+        onOpenChange={setPrefsOpen}
+      />
+    </>
   );
 }
 
@@ -117,7 +133,7 @@ export function SourceCard({ userSource }: SourceCardProps) {
     >
       {/* Меню действий — всегда видимо для доступности на мобильных */}
       <div className="absolute right-3 top-3">
-        <SourceCardActions sourceId={source.id} sourceTitle={source.title} isActive={isActive} />
+        <SourceCardActions userSource={userSource} />
       </div>
 
       {/* Иконка + название + URL — весь блок кликабелен */}
