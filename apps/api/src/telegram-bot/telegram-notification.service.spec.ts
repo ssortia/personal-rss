@@ -1,4 +1,4 @@
-import type { Article, Source, UserArticle, UserPreferences } from '@prisma/client';
+import type { Article, Source, UserArticle } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 
 // p-limit v5+ использует ESM — мокируем чтобы избежать SyntaxError в Jest
@@ -7,7 +7,9 @@ jest.mock('p-limit', () => ({
   default: () => (fn: () => Promise<unknown>) => fn(),
 }));
 
-import type { PrismaService } from '../prisma/prisma.service';
+import type { ArticlesRepository } from '../articles/articles.repository';
+import type { PreferencesRepository } from '../preferences/preferences.repository';
+import type { UsersRepository } from '../users/users.repository';
 
 import type { TelegramBotService } from './telegram-bot.service';
 import { TelegramNotificationService } from './telegram-notification.service';
@@ -61,21 +63,14 @@ const makeUserArticle = (
   ...overrides,
 });
 
-/**
- * Мок только тех методов Prisma, которые использует сервис.
- * jest.Mocked<PrismaService> не подходит — Prisma-делегаты имеют сложные
- * перегруженные типы, несовместимые с автоматическим jest.Mock-преобразованием.
- */
-type MockPrisma = {
-  user: { findMany: jest.Mock };
-  userArticle: { findMany: jest.Mock; update: jest.Mock };
-  userPreferences: { findFirst: jest.Mock };
-};
-
 describe('TelegramNotificationService', () => {
   let service: TelegramNotificationService;
   let mockBot: jest.Mocked<Pick<TelegramBotService, 'isReady' | 'sendMessage' | 'forwardMessage'>>;
-  let mockPrisma: MockPrisma;
+  let mockUsersRepo: jest.Mocked<Pick<UsersRepository, 'findWithTelegramChatId'>>;
+  let mockArticlesRepo: jest.Mocked<
+    Pick<ArticlesRepository, 'findPendingTelegramNotifications' | 'markTelegramNotified'>
+  >;
+  let mockPrefsRepo: jest.Mocked<Pick<PreferencesRepository, 'getSettings'>>;
 
   beforeEach(() => {
     mockBot = {
@@ -84,18 +79,24 @@ describe('TelegramNotificationService', () => {
       forwardMessage: jest.fn().mockResolvedValue(undefined),
     };
 
-    mockPrisma = {
-      user: { findMany: jest.fn().mockResolvedValue([]) },
-      userArticle: {
-        findMany: jest.fn().mockResolvedValue([]),
-        update: jest.fn().mockResolvedValue(undefined),
-      },
-      userPreferences: { findFirst: jest.fn().mockResolvedValue(null) },
+    mockUsersRepo = {
+      findWithTelegramChatId: jest.fn().mockResolvedValue([]),
+    };
+
+    mockArticlesRepo = {
+      findPendingTelegramNotifications: jest.fn().mockResolvedValue([]),
+      markTelegramNotified: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockPrefsRepo = {
+      getSettings: jest.fn().mockResolvedValue({ relevanceThreshold: 0.75 }),
     };
 
     service = new TelegramNotificationService(
       mockBot as unknown as TelegramBotService,
-      mockPrisma as unknown as PrismaService,
+      mockUsersRepo as unknown as UsersRepository,
+      mockArticlesRepo as unknown as ArticlesRepository,
+      mockPrefsRepo as unknown as PreferencesRepository,
     );
   });
 
@@ -103,21 +104,43 @@ describe('TelegramNotificationService', () => {
     it('ничего не делает если бот не готов', async () => {
       mockBot.isReady.mockReturnValue(false);
       await service.notifyAll();
-      expect(mockPrisma.user.findMany).not.toHaveBeenCalled();
+      expect(mockUsersRepo.findWithTelegramChatId).not.toHaveBeenCalled();
     });
 
     it('ничего не делает если нет пользователей с привязанным Telegram', async () => {
-      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([]);
       await service.notifyAll();
-      expect(mockPrisma.userArticle.findMany).not.toHaveBeenCalled();
+      expect(mockArticlesRepo.findPendingTelegramNotifications).not.toHaveBeenCalled();
     });
 
     it('запрашивает статьи только для пользователей с telegramChatId', async () => {
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '12345' }]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '12345' },
+      ]);
       await service.notifyAll();
-      expect(mockPrisma.userArticle.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+      expect(mockArticlesRepo.findPendingTelegramNotifications).toHaveBeenCalledWith(
+        'user-1',
+        expect.any(Number),
+        expect.any(Number),
       );
+    });
+
+    it('не запускает второй цикл если первый ещё не завершился', async () => {
+      let resolveFirst!: () => void;
+      const firstCycleBlocked = new Promise<void>((res) => {
+        resolveFirst = res;
+      });
+      mockUsersRepo.findWithTelegramChatId.mockImplementation(() =>
+        firstCycleBlocked.then(() => []),
+      );
+
+      const first = service.notifyAll();
+      // Второй вызов должен выйти сразу — isRunning = true
+      await service.notifyAll();
+      expect(mockUsersRepo.findWithTelegramChatId).toHaveBeenCalledTimes(1);
+
+      resolveFirst();
+      await first;
     });
   });
 
@@ -129,8 +152,12 @@ describe('TelegramNotificationService', () => {
         url: 'https://example.com/1',
         source: makeSource(SourceType.RSS),
       });
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '42' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([makeUserArticle({ article })]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '42' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([
+        makeUserArticle({ article }),
+      ]);
 
       await service.notifyAll();
 
@@ -150,8 +177,12 @@ describe('TelegramNotificationService', () => {
         title: '<script>alert("xss")</script>',
         source: makeSource(SourceType.RSS),
       });
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '42' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([makeUserArticle({ article })]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '42' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([
+        makeUserArticle({ article }),
+      ]);
 
       await service.notifyAll();
 
@@ -167,8 +198,12 @@ describe('TelegramNotificationService', () => {
         content: longContent,
         source: makeSource(SourceType.RSS),
       });
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '42' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([makeUserArticle({ article })]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '42' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([
+        makeUserArticle({ article }),
+      ]);
 
       await service.notifyAll();
 
@@ -184,8 +219,12 @@ describe('TelegramNotificationService', () => {
         url: 'https://t.me/testchannel/42',
         source: makeSource(SourceType.TELEGRAM),
       });
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '99' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([makeUserArticle({ article })]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '99' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([
+        makeUserArticle({ article }),
+      ]);
 
       await service.notifyAll();
 
@@ -200,8 +239,12 @@ describe('TelegramNotificationService', () => {
         source: makeSource(SourceType.TELEGRAM),
       });
       mockBot.forwardMessage.mockRejectedValue(new Error('Bad Request'));
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '99' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([makeUserArticle({ article })]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '99' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([
+        makeUserArticle({ article }),
+      ]);
 
       await service.notifyAll();
 
@@ -218,54 +261,66 @@ describe('TelegramNotificationService', () => {
         id: 'ua-42',
         article: makeArticle({ source: makeSource(SourceType.RSS) }),
       });
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '1' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([ua]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '1' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([ua]);
 
       await service.notifyAll();
 
-      expect(mockPrisma.userArticle.update).toHaveBeenCalledWith({
-        where: { id: 'ua-42' },
-        data: { telegramNotifiedAt: expect.any(Date) },
-      });
+      expect(mockArticlesRepo.markTelegramNotified).toHaveBeenCalledWith('ua-42');
     });
 
     it('не помечает статью если отправка упала (попробуем снова в следующем цикле)', async () => {
       const ua = makeUserArticle({ article: makeArticle({ source: makeSource(SourceType.RSS) }) });
       mockBot.sendMessage.mockRejectedValue(new Error('Telegram error'));
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '1' }]);
-      mockPrisma.userArticle.findMany.mockResolvedValue([ua]);
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '1' },
+      ]);
+      mockArticlesRepo.findPendingTelegramNotifications.mockResolvedValue([ua]);
 
       await service.notifyAll();
 
-      expect(mockPrisma.userArticle.update).not.toHaveBeenCalled();
+      expect(mockArticlesRepo.markTelegramNotified).not.toHaveBeenCalled();
     });
   });
 
   describe('порог релевантности', () => {
-    it('использует дефолтный порог 0.6 если нет настроек', async () => {
-      mockPrisma.userPreferences.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '1' }]);
+    it('использует дефолтный порог 0.75 если нет настроек', async () => {
+      mockPrefsRepo.getSettings.mockResolvedValue({
+        relevanceThreshold: 0.75,
+        interestsText: null,
+        selectedCategories: [],
+      });
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '1' },
+      ]);
 
       await service.notifyAll();
 
-      expect(mockPrisma.userArticle.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ score: { gte: 0.6 } }),
-        }),
+      expect(mockArticlesRepo.findPendingTelegramNotifications).toHaveBeenCalledWith(
+        'user-1',
+        0.75,
+        expect.any(Number),
       );
     });
 
     it('применяет пользовательский порог из настроек', async () => {
-      const prefs = { settings: { relevanceThreshold: 0.8 } } as unknown as UserPreferences;
-      mockPrisma.userPreferences.findFirst.mockResolvedValue(prefs);
-      mockPrisma.user.findMany.mockResolvedValue([{ id: 'user-1', telegramChatId: '1' }]);
+      mockPrefsRepo.getSettings.mockResolvedValue({
+        relevanceThreshold: 0.8,
+        interestsText: null,
+        selectedCategories: [],
+      });
+      mockUsersRepo.findWithTelegramChatId.mockResolvedValue([
+        { id: 'user-1', telegramChatId: '1' },
+      ]);
 
       await service.notifyAll();
 
-      expect(mockPrisma.userArticle.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ score: { gte: 0.8 } }),
-        }),
+      expect(mockArticlesRepo.findPendingTelegramNotifications).toHaveBeenCalledWith(
+        'user-1',
+        0.8,
+        expect.any(Number),
       );
     });
   });

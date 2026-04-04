@@ -1,10 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { Article } from '@prisma/client';
+import type { Article, Prisma } from '@prisma/client';
 import { SourceType } from '@prisma/client';
 import type { ArticleFeedItem, FeedPage } from '@repo/shared';
 
 import { FEED_DEFAULT_LIMIT } from '../config/constants';
 import { PrismaService } from '../prisma/prisma.service';
+
+/**
+ * Удаляет символы, запрещённые в PostgreSQL text-полях: null-байты (\u0000)
+ * и суррогатные пары (\uD800–\uDFFF), которые не являются валидным UTF-8.
+ */
+function sanitizeText(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/\u0000/g, '').replace(/[\uD800-\uDFFF]/g, '');
+}
 
 /** Универсальный формат статьи для импорта из любого источника (RSS, Telegram и др.). */
 export interface RawArticle {
@@ -49,9 +59,9 @@ export class ArticlesRepository {
     const data = valid.map((a) => ({
       sourceId,
       guid: a.guid,
-      title: a.title,
+      title: sanitizeText(a.title) ?? '',
       url: a.url,
-      content: a.content ?? null,
+      content: sanitizeText(a.content),
       publishedAt: a.publishedAt ?? null,
     }));
 
@@ -81,7 +91,7 @@ export class ArticlesRepository {
 
   /**
    * Возвращает страницу фида для пользователя.
-   * Включает статьи из активных источников с оценкой >= threshold или ещё не оценённые.
+   * Включает статьи из активных источников с оценкой >= threshold.
    * Порядок: publishedAt DESC NULLS LAST, id DESC. Cursor-based пагинация.
    *
    * TODO (проблема 6): применяется только глобальный threshold.
@@ -223,6 +233,40 @@ export class ArticlesRepository {
         }),
       ),
     ]);
+  }
+
+  /**
+   * Статьи пользователя, ожидающие Telegram-уведомления:
+   * не отправленные, оценка >= threshold, источник активен, упорядочены хронологически.
+   */
+  findPendingTelegramNotifications(
+    userId: string,
+    threshold: number,
+    take: number,
+  ): Promise<
+    Prisma.UserArticleGetPayload<{ include: { article: { include: { source: true } } } }>[]
+  > {
+    return this.prisma.userArticle.findMany({
+      where: {
+        userId,
+        telegramNotifiedAt: null,
+        score: { gte: threshold },
+        article: {
+          source: { userSources: { some: { userId, isActive: true } } },
+        },
+      },
+      include: { article: { include: { source: true } } },
+      orderBy: { article: { publishedAt: 'asc' } },
+      take,
+    });
+  }
+
+  /** Помечает статью как доставленную в Telegram. */
+  async markTelegramNotified(userArticleId: string): Promise<void> {
+    await this.prisma.userArticle.update({
+      where: { id: userArticleId },
+      data: { telegramNotifiedAt: new Date() },
+    });
   }
 
   /** Сохраняет или обновляет персональную оценку статьи для пользователя. */

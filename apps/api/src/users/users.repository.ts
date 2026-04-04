@@ -146,6 +146,14 @@ export class UsersRepository extends BaseRepository<
     });
   }
 
+  /** Возвращает всех пользователей с привязанным Telegram-чатом. */
+  findWithTelegramChatId(): Promise<Array<{ id: string; telegramChatId: string }>> {
+    return this.prisma.user.findMany({
+      where: { telegramChatId: { not: null } },
+      select: { id: true, telegramChatId: true },
+    }) as Promise<Array<{ id: string; telegramChatId: string }>>;
+  }
+
   /** Ищет пользователя по привязанному OAuth-аккаунту. */
   findByOAuthAccount(provider: string, providerAccountId: string): Promise<User | null> {
     return this.prisma.user.findFirst({

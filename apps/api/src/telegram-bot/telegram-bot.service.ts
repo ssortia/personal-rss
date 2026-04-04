@@ -69,8 +69,9 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
   }
 
   /**
-   * Пересылает сообщение из публичного Telegram-канала.
-   * Выбрасывает ошибку если канал приватный или сообщение удалено — вызывающий код должен обработать fallback.
+   * Пересылает сообщение из публичного Telegram-канала с заголовком «Переслано от @channel».
+   * Выбрасывает ошибку если канал приватный, сообщение удалено или канал запрещает пересылку.
+   * Вызывающий код должен обработать fallback.
    */
   async forwardMessage(toChatId: string, fromChatId: string, messageId: number): Promise<void> {
     await this.bot?.api.forwardMessage(toChatId, fromChatId, messageId);
