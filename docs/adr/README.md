@@ -24,6 +24,7 @@ ADR (Architecture Decision Record) — короткий документ, фик
 | [010](./010-gate-pattern.md)                | Gate — слой интеграции с внешними API                | Принято | 2026-03-24 |
 | [011](./011-jsonb-user-preferences.md)      | JSONB-поле для хранения пользовательских настроек    | Принято | 2026-03-24 |
 | [012](./012-scheduler-nestjs-schedule.md)   | Планировщик синхронизации: @nestjs/schedule + @Cron  | Принято | 2026-03-24 |
+| [013](./013-ai-provider-factory.md)         | Поддержка нескольких AI-провайдеров через factory DI | Принято | 2026-04-04 |
 
 ---
 

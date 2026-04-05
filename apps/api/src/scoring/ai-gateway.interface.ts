@@ -7,6 +7,7 @@ export interface AiMessage {
 
 export interface AiChatOptions {
   maxTokens?: number;
+  temperature?: number;
 }
 
 /**

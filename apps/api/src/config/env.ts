@@ -16,14 +16,20 @@ const envSchema = z.object({
   SMTP_PASS: z.string(),
   SMTP_FROM: z.string().default('Curio <noreply@curio.app>'),
   APP_URL: z.string().url(),
-  // Groq API (AI-оценка статей)
+  // AI-провайдер: groq (дефолт) или openrouter
+  AI_PROVIDER: z.enum(['groq', 'openrouter']).default('groq'),
+  // Переопределяет дефолтную модель выбранного провайдера (опционально)
+  AI_MODEL: z.string().optional(),
+  // Groq API (используется при AI_PROVIDER=groq)
   GROQ_API_KEY: z.string().optional(),
-  // Количество статей в одном запросе к Groq
+  // Количество статей в одном запросе к AI
   GROQ_BATCH_SIZE: z.coerce.number().int().positive().default(10),
   // Задержка между батчами в мс (минимальная; может быть увеличена по TPM-лимиту)
   GROQ_BATCH_DELAY_MS: z.coerce.number().int().nonnegative().default(2000),
   // Лимит токенов в минуту для Groq (бесплатный ключ ~6000 TPM)
   GROQ_TPM_LIMIT: z.coerce.number().int().positive().default(6000),
+  // OpenRouter API (используется при AI_PROVIDER=openrouter)
+  OPENROUTER_API_KEY: z.string().optional(),
   // Интервал обхода источников в минутах
   FEED_SYNC_INTERVAL_MIN: z.coerce.number().int().positive().default(30),
   // Telegram Bot (опционально — фича отключена если не задано)
